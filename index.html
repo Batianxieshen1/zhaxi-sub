@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>朝夕 · 订阅每日成本</title>
+<meta name="theme-color" content="#007AFF">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23007AFF'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='-apple-system,PingFang SC,sans-serif'>%E6%9C%9D</text></svg>">
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --tertiary: #aeaeb2;
+    --accent: #007AFF;
+    --accent-hover: #0071e3;
+    --danger: #ff3b30;
+    --hairline: rgba(0, 0, 0, .08);
+    --radius: 20px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 毛玻璃顶栏（iOS 材质） */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, .68);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 0.5px solid var(--hairline);
+  }
+  .topbar h1 { font-size: 16px; font-weight: 600; letter-spacing: .08em; }
+  .topbar .actions { display: flex; gap: 8px; }
+  /* 页面标题（苹果式居中大标题） */
+  .hero { text-align: center; padding: 34px 0 26px; }
+  .hero h2 { font-size: 40px; font-weight: 600; letter-spacing: .08em; margin: 0 0 8px; }
+  .hero p { font-size: 15px; color: var(--muted); margin: 0; }
+  main { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
+
+  button {
+    font: inherit; border: none; background: var(--card); color: var(--accent);
+    padding: 6px 14px; border-radius: 980px; cursor: pointer;
+    transition: background .2s, transform .15s;
+  }
+  button:hover { background: #f2f2f7; }
+  button:active { transform: scale(.96); }
+  button.primary {
+    background: var(--accent); color: #fff; font-weight: 600;
+    padding: 9px 20px; box-shadow: 0 4px 14px rgba(0, 122, 255, .3);
+  }
+  button.primary:hover { background: var(--accent-hover); }
+
+  /* 总览三卡片：每天 / 每月 / 每年（手机宽度下自动 2+1 列） */
+  .overview {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px; margin-bottom: 22px;
+  }
+  .card {
+    background: var(--card); border-radius: var(--radius);
+    padding: 22px 24px; box-shadow: 0 2px 12px rgba(0, 0, 0, .05);
+    animation: appleIn .7s cubic-bezier(.2, .8, .2, 1) both;
+    transition: transform .4s cubic-bezier(.2, .8, .2, 1), box-shadow .4s cubic-bezier(.2, .8, .2, 1);
+  }
+  .card:nth-child(2) { animation-delay: .08s; }
+  .card:nth-child(3) { animation-delay: .16s; }
+  .card:hover { transform: scale(1.02) translateY(-2px); box-shadow: 0 12px 32px rgba(0, 0, 0, .1); }
+  .card .label { font-size: 13px; color: var(--muted); }
+  /* 财报式数字：¥ 小字 + 数字大字 */
+  .card .value { display: flex; align-items: baseline; margin-top: 6px; }
+  .card .cur { font-size: 18px; font-weight: 600; color: var(--muted); margin-right: 5px; }
+  .card .num { font-size: 40px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .card.hl .cur, .card.hl .num { color: var(--accent); }
+  .card .hint { font-size: 12px; color: var(--tertiary); margin-top: 4px; }
+
+  /* 类别汇总 */
+  .by-category { margin-bottom: 22px; }
+  .by-category .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--card); border-radius: 999px; padding: 6px 16px; font-size: 13px; margin: 0 8px 8px 0;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .05);
+  }
+  .chip b { color: var(--accent); }
+
+  /* 列表区 */
+  .section-head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .section-head h2 { font-size: 20px; font-weight: 700; flex: 1; }
+  .section-head select {
+    font: inherit; border: none; background: var(--card); color: var(--text);
+    border-radius: 980px; padding: 8px 14px; box-shadow: 0 1px 6px rgba(0, 0, 0, .05);
+  }
+  .sub-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .sub-item {
+    background: var(--card); border-radius: 16px;
+    padding: 14px 18px; display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .04);
+    animation: appleIn .6s cubic-bezier(.2, .8, .2, 1) both;
+    transition: transform .3s cubic-bezier(.2, .8, .2, 1);
+  }
+  .sub-item:nth-child(1) { animation-delay: .22s; }
+  .sub-item:nth-child(2) { animation-delay: .3s; }
+  .sub-item:nth-child(3) { animation-delay: .38s; }
+  .sub-item:nth-child(4) { animation-delay: .46s; }
+  .sub-item:hover { transform: scale(1.01); }
+  .sub-item .icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+  }
+  .icon.i1 { background: #ffe5e2; }
+  .icon.i2 { background: #e3edff; }
+  .icon.i3 { background: #e3f8e9; }
+  .icon.i4 { background: #fff2e0; }
+  .sub-item .info { flex: 1; min-width: 0; }
+  .sub-item .name { font-weight: 600; }
+  .sub-item .meta { font-size: 12px; color: var(--muted); }
+  .sub-item .cost { text-align: right; flex-shrink: 0; }
+  .sub-item .cost .daily { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .sub-item .cost .monthly { font-size: 12px; color: var(--tertiary); }
+  .sub-item .ops { display: flex; gap: 4px; flex-shrink: 0; }
+  .sub-item .ops button { padding: 4px 10px; font-size: 13px; }
+  .sub-item .ops button.del:hover { color: var(--danger); background: #ffe5e2; }
+
+  .empty {
+    text-align: center; color: var(--muted); padding: 56px 0; font-size: 14px;
+  }
+
+  /* 弹窗表单（iOS modal：弹簧缩放进入） */
+  dialog {
+    border: none; border-radius: 22px; padding: 0; width: min(420px, 92vw);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, .25);
+    animation: appleModal .45s cubic-bezier(.34, 1.56, .64, 1) both;
+  }
+  dialog::backdrop { background: rgba(0, 0, 0, .35); }
+  @keyframes appleModal { from { opacity: 0; transform: scale(.9) translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes appleIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  .form-body { padding: 24px; }
+  .form-body h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field select {
+    width: 100%; font: inherit; border: 1px solid #d2d2d7; border-radius: 10px;
+    padding: 10px 12px; color: var(--text); background: #f5f5f7;
+    transition: border-color .2s, background .2s;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .form-actions button { padding: 9px 18px; font-size: 14px; }
+  .form-actions button[type="submit"] { background: var(--accent); color: #fff; font-weight: 600; }
+  .form-actions button[type="submit"]:hover { background: var(--accent-hover); }
+  .form-actions #btnCancel { background: #f2f2f7; color: var(--text); }
+  .form-actions #btnCancel:hover { background: #e8e8ed; }
+
+  /* 分段控件（iOS segmented control） */
+  .seg { display: flex; background: rgba(118, 118, 128, .12); border-radius: 10px; padding: 2px; }
+  .seg button {
+    border: none; background: transparent; color: var(--text); font-size: 13px;
+    padding: 6px 14px; border-radius: 8px; font-family: inherit;
+  }
+  .seg button.active { background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .12); font-weight: 600; }
+
+  /* 弹窗内实时预览 */
+  .live-preview {
+    font-size: 13px; color: var(--accent); font-weight: 500;
+    background: #eef6ff; border-radius: 10px; padding: 9px 12px; margin-bottom: 4px;
+  }
+
+  /* 空状态 */
+  .empty { text-align: center; color: var(--muted); padding: 64px 0; }
+  .empty-icon { font-size: 52px; margin-bottom: 14px; }
+  .empty-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .empty-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+
+  /* 通用确认弹窗 */
+  #confirmDialog { width: min(320px, 92vw); text-align: center; }
+  .confirm-body { padding: 28px 24px 24px; }
+  .confirm-icon { font-size: 40px; margin-bottom: 10px; }
+  #confirmMsg { font-size: 16px; font-weight: 600; color: var(--text); margin: 0 0 22px; }
+  .confirm-actions { display: flex; gap: 10px; }
+  .confirm-actions button {
+    flex: 1; border: none; border-radius: 980px; padding: 10px 0; font: inherit; font-size: 15px; cursor: pointer;
+  }
+  #confirmCancel { background: #f2f2f7; color: var(--text); }
+  #confirmCancel:hover { background: #e8e8ed; }
+  #confirmOk { background: #ff3b30; color: #fff; font-weight: 600; }
+  #confirmOk:hover { background: #e6352b; }
+
+  /* Toast */
+  .toast-box {
+    position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 100;
+    pointer-events: none;
+  }
+  .toast {
+    background: rgba(29, 29, 31, .92); color: #fff; font-size: 13px;
+    padding: 10px 20px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+    opacity: 0; transform: translateY(12px) scale(.96);
+    transition: opacity .3s cubic-bezier(.2, .8, .2, 1), transform .3s cubic-bezier(.2, .8, .2, 1);
+  }
+  .toast.show { opacity: 1; transform: none; }
+  .toast.error { background: rgba(255, 59, 48, .95); }
+
+  /* 删除行淡出 */
+  .sub-item.leaving { opacity: 0; transform: translateX(24px) scale(.98); transition: opacity .25s ease, transform .25s ease; }
+
+  /* 整行可点击编辑 */
+  .sub-item { cursor: pointer; }
+  .sub-item:hover { background: #fafafa; }
+
+  /* 细节：滚动条 / 选区 / 减少动效 */
+  ::selection { background: rgba(0, 122, 255, .22); }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, .18); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .3); }
+  ::-webkit-scrollbar-track { background: transparent; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  /* 实时时钟 */
+  .clock {
+    font-size: 13px; color: var(--tertiary); margin-top: 10px;
+    font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  }
+
+  /* select 自定义箭头（去掉浏览器默认样式） */
+  .field select {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23868e9c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+
+  /* 提醒日历（iOS 日历风格） */
+  .cal-dialog { width: min(380px, 94vw); }
+  .cal-body { padding: 20px; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-head h3 { font-size: 17px; font-weight: 700; }
+  .cal-nav { display: flex; gap: 6px; }
+  .cal-btn {
+    border: none; background: #f2f2f7; color: var(--text); font: inherit; cursor: pointer;
+    border-radius: 999px; padding: 6px 14px; font-size: 14px;
+  }
+  .cal-btn:hover { background: #e8e8ed; }
+  .cal-nav .cal-btn { width: 30px; height: 30px; padding: 0; font-size: 18px; line-height: 1; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-week { text-align: center; font-size: 11px; color: var(--tertiary); padding: 4px 0; font-weight: 600; }
+  .cal-day {
+    position: relative; text-align: center; padding: 9px 0 12px; border-radius: 10px;
+    font-size: 14px; cursor: pointer; font-variant-numeric: tabular-nums;
+    transition: background .15s;
+  }
+  .cal-day:hover { background: #f2f2f7; }
+  .cal-day.today { background: var(--accent); color: #fff; font-weight: 600; }
+  .cal-day.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .cal-day .dots { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; }
+  .cal-day .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+  .cal-day.today .dot { background: #fff; }
+  .cal-events { margin-top: 14px; min-height: 40px; }
+  .cal-ev {
+    display: flex; align-items: center; gap: 10px;
+    background: #f5f5f7; border-radius: 12px; padding: 9px 14px; margin-bottom: 6px; font-size: 13px;
+    animation: appleIn .35s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .cal-ev span { flex: 1; font-weight: 500; }
+  .cal-ev b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .cal-ev em { font-style: normal; color: var(--tertiary); font-size: 12px; }
+  .cal-none { text-align: center; color: var(--tertiary); font-size: 13px; padding: 18px 0; }
+  .cal-close-row { text-align: center; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>朝 夕</h1>
+  <div class="actions">
+    <button id="btnCal" title="提醒日历：查看订阅到期日">📅</button>
+    <button id="btnExport" title="导出数据备份">导出</button>
+    <button id="btnExportCSV" title="导出 CSV（Excel 可打开）">CSV</button>
+    <button id="btnImport" title="导入备份文件">导入</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+  </div>
+</header>
+
+<main>
+  <!-- 页面标题 -->
+  <section class="hero">
+    <h2>朝 夕</h2>
+    <p>Daily Cost · 年费细算到每一天</p>
+    <div class="clock" id="clock"></div>
+  </section>
+
+  <!-- 总览：双成本视角的核心 -->
+  <section class="overview">
+    <div class="card hl">
+      <div class="label">☀️ 每天成本</div>
+      <div class="value" id="totalDaily"><span class="cur">¥</span><span class="num">0.00</span></div>
+      <div class="hint" id="dailyHint">所有订阅平摊到每天</div>
+    </div>
+    <div class="card">
+      <div class="label">📅 每月成本</div>
+      <div class="value" id="totalMonthly"><span class="cur">¥</span><span class="num">0.00</span></div>
+      <div class="hint">所有订阅平摊到每月</div>
+    </div>
+    <div class="card">
+      <div class="label">🗓 每年成本</div>
+      <div class="value" id="totalYearly"><span class="cur">¥</span><span class="num">0.00</span></div>
+      <div class="hint">按年汇总</div>
+    </div>
+  </section>
+
+  <!-- 类别汇总 -->
+  <section class="by-category" id="byCategory"></section>
+
+  <!-- 订阅清单 -->
+  <section>
+    <div class="section-head">
+      <h2>订阅清单</h2>
+      <div class="seg" id="sortSeg">
+        <button data-sort="daily" class="active">每日</button>
+        <button data-sort="monthly">每月</button>
+        <button data-sort="name">名称</button>
+      </div>
+      <button id="btnAdd" class="primary">＋ 添加订阅</button>
+    </div>
+    <ul class="sub-list" id="subList"></ul>
+    <div class="empty" id="emptyState">
+      <div class="empty-icon">🧾</div>
+      <div class="empty-title">还没有订阅记录</div>
+      <div class="empty-sub">把会员、年费都记下来，看看每天到底花多少</div>
+      <button id="btnAddEmpty" class="primary">＋ 添加第一笔</button>
+    </div>
+  </section>
+</main>
+
+<!-- 添加 / 编辑弹窗 -->
+<dialog id="subDialog">
+  <form id="subForm" class="form-body">
+    <h3 id="dialogTitle">添加订阅</h3>
+    <input type="hidden" id="fId">
+    <div class="field">
+      <label for="fName">名称 *</label>
+      <input id="fName" placeholder="如：Netflix / iCloud / 健身房" required>
+    </div>
+    <div class="field">
+      <label for="fCategory">类别</label>
+      <input id="fCategory" list="catList" placeholder="如：视频 / 工具 / 学习">
+      <datalist id="catList">
+        <option value="视频"></option>
+        <option value="音乐"></option>
+        <option value="工具"></option>
+        <option value="学习"></option>
+        <option value="生活"></option>
+        <option value="其他"></option>
+      </datalist>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="fPeriod">计费周期 *</label>
+        <select id="fPeriod">
+          <option value="yearly">按年</option>
+          <option value="monthly">按月</option>
+          <option value="one_time">一次性买断</option>
+          <option value="custom">自定义时间段</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fAmount">金额（¥）*</label>
+        <input id="fAmount" type="number" min="0" step="0.01" placeholder="199" required>
+      </div>
+    </div>
+    <div class="field" id="yearsField" hidden>
+      <label for="fYears">预计使用年数 *</label>
+      <input id="fYears" type="number" min="0.5" step="0.5" placeholder="如：3">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label for="fStart">开始日期</label>
+        <input id="fStart" type="date">
+      </div>
+      <div class="field" id="endField" hidden>
+        <label for="fEnd">结束日期</label>
+        <input id="fEnd" type="date">
+      </div>
+    </div>
+    <div class="field">
+      <label for="fNote">备注</label>
+      <input id="fNote" placeholder="可选">
+    </div>
+    <div class="live-preview" id="livePreview">≈ 每天 ¥0.00 · 每月 ¥0.00 · 每年 ¥0.00</div>
+    <div class="form-actions">
+      <button type="button" id="btnCancel">取消</button>
+      <button type="submit" class="primary">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 提醒日历弹窗 -->
+<dialog id="calDialog" class="cal-dialog">
+  <div class="cal-body">
+    <div class="cal-head">
+      <h3 id="calTitle"></h3>
+      <div class="cal-nav">
+        <button type="button" id="calPrev" class="cal-btn" title="上一月">‹</button>
+        <button type="button" id="calNext" class="cal-btn" title="下一月">›</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-events" id="calEvents"></div>
+    <div class="cal-close-row"><button type="button" id="calClose" class="cal-btn">关闭</button></div>
+  </div>
+</dialog>
+
+<!-- 通用确认弹窗（替换原生 confirm） -->
+<dialog id="confirmDialog">
+  <div class="confirm-body">
+    <div class="confirm-icon">🗑</div>
+    <h3 id="confirmMsg">确定删除？</h3>
+    <div class="confirm-actions">
+      <button type="button" id="confirmCancel">取消</button>
+      <button type="button" id="confirmOk" class="danger">删除</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Toast 提示容器 -->
+<div id="toastBox" class="toast-box"></div>
+
+<script>
+// ==================== 逻辑层 ====================
+const STORAGE_KEY = 'sub-cost-calc:v1';
+
+// 全局数据源：init 时加载，增删改/导出/委托共享同一份（勿在函数内重新声明）
+let subs = [];
+
+// 首次使用时的示例数据（展示效果用，可随意删改）
+const DEFAULT_DATA = [
+  { id: 'demo-1', name: 'Netflix 视频', category: '视频', period: 'monthly', amount: 15, years: null, start: '', note: '示例数据，可删除' },
+  { id: 'demo-2', name: 'iCloud+ 云空间', category: '工具', period: 'yearly', amount: 68, years: null, start: '', note: '示例数据，可删除' },
+  { id: 'demo-3', name: '剪辑软件买断', category: '工具', period: 'one_time', amount: 698, years: 3, start: '', note: '示例数据，可删除' },
+  { id: 'demo-4', name: '半年会员卡', category: '其他', period: 'custom', amount: 30, years: null, start: '2026-03-01', end: '2026-08-31', note: '示例数据，可删除' },
+];
+
+function uid() {
+  return (crypto.randomUUID && crypto.randomUUID()) ||
+    'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+}
+
+const PERIODS = ['yearly', 'monthly', 'one_time', 'custom'];
+
+// 导入/存储时规范化每条记录：修复脏数据（非法周期、金额、缺 id 等）
+function normalizeSub(s, idx) {
+  const amount = Number(s && s.amount);
+  return {
+    id: s && typeof s.id === 'string' && s.id ? s.id : 'imp-' + idx + '-' + uid(),
+    name: (s && s.name ? String(s.name) : '').trim() || '未命名',
+    category: (s && s.category ? String(s.category) : '').trim(),
+    period: s && PERIODS.includes(s.period) ? s.period : 'yearly',
+    amount: isNaN(amount) || amount < 0 ? 0 : amount,
+    years: s && s.period === 'one_time' ? (Number(s.years) || 0) : null,
+    start: s && typeof s.start === 'string' ? s.start : '',
+    end: s && typeof s.end === 'string' ? s.end : '',
+    note: s && s.note ? String(s.note) : '',
+  };
+}
+
+// 读取订阅数据；首次使用自动写入示例数据
+function loadSubs() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw !== null) {
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    }
+  } catch (e) { /* 数据损坏则重置 */ }
+  saveSubs(DEFAULT_DATA);
+  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+}
+
+function saveSubs(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+// ---- 折算核心：所有口径统一从「年成本」出发 ----
+const DAYS_PER_YEAR = 365;
+const MONTHS_PER_YEAR = 12;
+
+// 两个日期之间的实际天数（含头含尾）：2026-03-01 ~ 2026-03-31 = 31 天
+function dateDays(start, end) {
+  const s = new Date(start + 'T00:00:00');
+  const e = new Date(end + 'T00:00:00');
+  if (isNaN(s) || isNaN(e) || e < s) return 0;
+  return Math.round((e - s) / 86400000) + 1;
+}
+
+// 单项订阅 → 年/月/日成本（元）
+// 按年：年成本 = 金额；按月：年成本 = 金额×12；一次性：年成本 = 金额 ÷ 使用年数
+// 自定义时间段：年成本 = 金额 ÷ 实际天数 × 365（每天成本 = 金额 ÷ 实际天数）
+function calcCosts(sub) {
+  const amount = Number(sub.amount) || 0;
+  let yearly = 0;
+  switch (sub.period) {
+    case 'yearly': yearly = amount; break;
+    case 'monthly': yearly = amount * MONTHS_PER_YEAR; break;
+    case 'one_time': {
+      const years = Number(sub.years) || 0;
+      yearly = years > 0 ? amount / years : 0;
+      break;
+    }
+    case 'custom': {
+      const days = dateDays(sub.start, sub.end);
+      yearly = days > 0 ? (amount / days) * DAYS_PER_YEAR : 0;
+      break;
+    }
+  }
+  return {
+    yearly: yearly,
+    monthly: yearly / MONTHS_PER_YEAR,
+    daily: yearly / DAYS_PER_YEAR,
+  };
+}
+
+// 汇总：总成本 + 按类别小计
+function summarize(list) {
+  const total = { yearly: 0, monthly: 0, daily: 0 };
+  const byCategory = {};
+  for (const sub of list) {
+    const c = calcCosts(sub);
+    total.yearly += c.yearly;
+    total.monthly += c.monthly;
+    total.daily += c.daily;
+    const cat = (sub.category || '').trim() || '其他';
+    if (!byCategory[cat]) byCategory[cat] = { yearly: 0, monthly: 0, daily: 0, count: 0 };
+    byCategory[cat].yearly += c.yearly;
+    byCategory[cat].monthly += c.monthly;
+    byCategory[cat].daily += c.daily;
+    byCategory[cat].count += 1;
+  }
+  return { total, byCategory };
+}
+
+// 金额格式化：保留两位小数；不足 ¥0.01 时显示 3 位，避免「¥0.00/天」误导
+function fmtMoney(n) {
+  if (n > 0 && n < 0.01) return '¥' + (Math.round(n * 1000) / 1000).toFixed(3);
+  return '¥' + (Math.round(n * 100) / 100).toFixed(2);
+}
+
+// ==================== 渲染层 ====================
+// ---- 全局提示与确认（替代原生 alert/confirm） ----
+function toast(msg, type) {
+  const box = document.getElementById('toastBox');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type === 'error' ? ' error' : '');
+  t.textContent = msg;
+  box.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 320);
+  }, 2400);
+}
+
+function askConfirm(msg) {
+  return new Promise((resolve) => {
+    const dlg = document.getElementById('confirmDialog');
+    document.getElementById('confirmMsg').textContent = msg;
+    const done = (v) => {
+      dlg.close();
+      dlg.removeEventListener('click', onBackdrop);
+      document.getElementById('confirmOk').onclick = null;
+      document.getElementById('confirmCancel').onclick = null;
+      resolve(v);
+    };
+    const onBackdrop = (e) => { if (e.target === dlg) done(false); };
+    document.getElementById('confirmOk').onclick = () => done(true);
+    document.getElementById('confirmCancel').onclick = () => done(false);
+    dlg.addEventListener('click', onBackdrop);
+    dlg.showModal();
+  });
+}
+
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' && window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// 数字滚动动画：从当前值平滑滚到目标值（easeOutCubic）
+// 用 setInterval(16ms≈60fps) 驱动：requestAnimationFrame 在无头/后台节流环境下不触发，interval 兼容性最好
+function animateValue(el, to, dur) {
+  if (el._timer) clearInterval(el._timer);
+  const numEl = el.querySelector ? el.querySelector('.num') : null;
+  const setText = (v) => {
+    const s = fmtMoney(v);
+    if (numEl) numEl.textContent = s.replace(/^¥/, '');
+    else el.textContent = s;
+  };
+  if (prefersReducedMotion()) { el._cur = to; setText(to); return; }
+  const from = (el._cur !== undefined ? el._cur : 0);
+  const duration = dur || 900;
+  const start = performance.now();
+  el._timer = setInterval(() => {
+    const p = Math.min((performance.now() - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    setText(from + (to - from) * eased);
+    if (p >= 1) {
+      clearInterval(el._timer);
+      el._timer = null;
+      el._cur = to;
+      setText(to);
+    }
+  }, 16);
+}
+
+// CSV 导出（Excel 可打开）
+function exportCSV() {
+  const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = [['名称', '类别', '周期', '金额', '使用年数', '开始', '结束', '备注', '每天成本', '每月成本', '每年成本']];
+  for (const s of subs) {
+    const c = calcCosts(s);
+    rows.push([s.name, s.category, s.period, s.amount, s.years || '', s.start || '', s.end || '', s.note || '',
+      c.daily.toFixed(3), c.monthly.toFixed(2), c.yearly.toFixed(2)]);
+  }
+  const blob = new Blob(['\ufeff' + rows.map((r) => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const d = new Date();
+  a.download = '朝夕-订阅数据-' + d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// 弹窗内实时预览：边填边算
+function updateLivePreview() {
+  const el = document.getElementById('livePreview');
+  if (!el) return;
+  const c = calcCosts(collectForm());
+  el.textContent = '≈ 每天 ' + fmtMoney(c.daily) + ' · 每月 ' + fmtMoney(c.monthly) + ' · 每年 ' + fmtMoney(c.yearly);
+}
+
+// ---- 实时时钟 ----
+function tickClock() {
+  const el = document.getElementById('clock');
+  if (!el) return;
+  const d = new Date();
+  const week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+  const pad = (n) => String(n).padStart(2, '0');
+  el.textContent = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() +
+    '日 星期' + week + ' · ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+// ---- 提醒日历 ----
+let calCursor = null;   // 当前显示的月份（Date）
+let calSelected = null; // 选中的日期 { y, m, d }
+
+// 某月有续费事件的日期 → { day: [订阅...] }
+// 月付：每月同日续费；年付：仅开始日期所在月份续费；一次性/自定义时间段无续费日
+function calEventsForMonth(y, m) {
+  const map = {};
+  const lastDay = new Date(y, m + 1, 0).getDate();
+  for (const s of subs) {
+    if (!s.start || s.period === 'one_time' || s.period === 'custom') continue;
+    const d = new Date(s.start + 'T00:00:00');
+    if (isNaN(d)) continue;
+    let eventDay = null;
+    if (s.period === 'monthly') {
+      eventDay = Math.min(d.getDate(), lastDay);
+    } else if (s.period === 'yearly' && d.getMonth() === m) {
+      eventDay = Math.min(d.getDate(), lastDay);
+    }
+    if (eventDay !== null) {
+      (map[eventDay] = map[eventDay] || []).push(s);
+    }
+  }
+  return map;
+}
+
+function renderCal() {
+  const y = calCursor.getFullYear();
+  const m = calCursor.getMonth();
+  document.getElementById('calTitle').textContent = y + '年' + (m + 1) + '月';
+  const events = calEventsForMonth(y, m);
+  const today = new Date();
+  const firstDay = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  let html = ['日', '一', '二', '三', '四', '五', '六']
+    .map((w) => '<div class="cal-week">' + w + '</div>').join('');
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+  for (let d = 1; d <= days; d++) {
+    const isToday = y === today.getFullYear() && m === today.getMonth() && d === today.getDate();
+    const isSel = calSelected && calSelected.y === y && calSelected.m === m && calSelected.d === d;
+    const has = events[d] ? events[d].length : 0;
+    html += '<div class="cal-day' + (isToday ? ' today' : '') + (isSel ? ' sel' : '') + '" data-d="' + d + '">' +
+      d + (has ? '<span class="dots"><i class="dot"></i></span>' : '') + '</div>';
+  }
+  document.getElementById('calGrid').innerHTML = html;
+
+  // 选中日期的到期订阅列表
+  const selEvents = calSelected ? events[calSelected.d] : null;
+  document.getElementById('calEvents').innerHTML = selEvents && selEvents.length
+    ? selEvents.map((s) =>
+        '<div class="cal-ev"><span>🔔 ' + esc(s.name) + '</span><b>' + fmtMoney(s.amount) + '</b><em>' + periodText(s) + '</em></div>'
+      ).join('')
+    : '<div class="cal-none">' + (calSelected ? '这天没有订阅到期' : '点击日期，查看当天到期的订阅') + '</div>';
+}
+
+function openCalendar() {
+  calCursor = new Date();
+  const t = new Date();
+  calSelected = { y: t.getFullYear(), m: t.getMonth(), d: t.getDate() };
+  renderCal();
+  document.getElementById('calDialog').showModal();
+}
+
+const CAT_ICONS = { '视频': '🎬', '音乐': '🎵', '工具': '🛠', '学习': '📚', '生活': '🏠', '其他': '📦' };
+
+// 类别图标底色（多彩活力风格）
+const CAT_ICON_BG = { '视频': 'i1', '音乐': 'i2', '工具': 'i3', '学习': 'i4', '生活': 'i2', '其他': 'i4' };
+
+function catIconBg(cat) {
+  return CAT_ICON_BG[cat] || 'i4';
+}
+
+// 转义用户输入，防止特殊字符破坏页面
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (ch) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+  ));
+}
+
+function catIcon(cat) {
+  return CAT_ICONS[cat] || '📦';
+}
+
+// 计费周期描述：如「¥15/月」「¥68/年」「¥698 买断 / 3 年」
+function periodText(sub) {
+  const amt = fmtMoney(sub.amount);
+  switch (sub.period) {
+    case 'yearly': return amt + '/年';
+    case 'monthly': return amt + '/月';
+    case 'one_time':
+      return amt + ' 买断' + (sub.years ? ' / ' + sub.years + ' 年' : '');
+    case 'custom': {
+      const days = dateDays(sub.start, sub.end);
+      return amt + ' / ' + (sub.start || '?') + ' ~ ' + (sub.end || '?') +
+        (days ? '（' + days + ' 天）' : '');
+    }
+    default: return '';
+  }
+}
+
+// 某年某月的天数（处理 2 月 29/30/31 号 rollover）
+function daysInMonth(y, m) {
+  return new Date(y, m + 1, 0).getDate();
+}
+
+// 下次续费日期（now 可注入，便于测试）；月付=每月同日，年付=每年同日，不存在的日期取月末
+function nextRenewalDate(sub, now) {
+  if (!sub.start) return null;
+  const s = new Date(sub.start + 'T00:00:00');
+  if (isNaN(s)) return null;
+  const t = now ? new Date(now) : new Date();
+  const today = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  if (sub.period === 'monthly') {
+    const day = Math.min(s.getDate(), daysInMonth(today.getFullYear(), today.getMonth()));
+    let d = new Date(today.getFullYear(), today.getMonth(), day);
+    if (d < today) {
+      d = new Date(today.getFullYear(), today.getMonth() + 1,
+        Math.min(s.getDate(), daysInMonth(today.getFullYear(), today.getMonth() + 1)));
+    }
+    return d;
+  }
+  const day = Math.min(s.getDate(), daysInMonth(today.getFullYear(), s.getMonth()));
+  let d = new Date(today.getFullYear(), s.getMonth(), day);
+  if (d < today) {
+    d = new Date(today.getFullYear() + 1, s.getMonth(),
+      Math.min(s.getDate(), daysInMonth(today.getFullYear() + 1, s.getMonth())));
+  }
+  return d;
+}
+
+// 续费日提示（仅展示，不通知）：如「下次续费：2026年9月6日」
+function renewalText(sub) {
+  if (!sub.start || sub.period === 'one_time' || sub.period === 'custom') return '';
+  const d = nextRenewalDate(sub);
+  return d ? '下次续费：' + d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日' : '';
+}
+
+// 排序：daily/monthly 降序，name 按中文拼音
+function sortSubs(list, key) {
+  const arr = [...list];
+  if (key === 'name') return arr.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh'));
+  const get = key === 'monthly'
+    ? (s) => calcCosts(s).monthly
+    : (s) => calcCosts(s).daily;
+  return arr.sort((a, b) => get(b) - get(a));
+}
+
+// 每日成本的「体感」类比，让大数字可感知
+function dailyAnalogy(daily) {
+  if (daily >= 20) return '≈ 一天一顿火锅';
+  if (daily >= 8) return '≈ 一天一杯奶茶';
+  if (daily >= 2) return '≈ 一天一瓶饮料';
+  if (daily >= 0.5) return '≈ 一天一个包子';
+  return '≈ 一天不到五毛钱';
+}
+
+// 核心渲染：总览三卡片 + 类别汇总 + 订阅列表
+function render() {
+  subs = loadSubs(); // 同步全局数据源：本地/跨标签页改动都从这里刷新
+  const { total, byCategory } = summarize(subs);
+
+  // ① 总览三卡片（每天 / 每月 / 每年）
+  animateValue(document.getElementById('totalDaily'), total.daily);
+  animateValue(document.getElementById('totalMonthly'), total.monthly);
+  animateValue(document.getElementById('totalYearly'), total.yearly);
+  document.getElementById('dailyHint').textContent = subs.length
+    ? '共 ' + subs.length + ' 笔订阅' + (total.daily > 0 ? ' · ' + dailyAnalogy(total.daily) : '')
+    : '所有订阅平摊到每天';
+
+  // ② 类别汇总（chips）
+  const cats = Object.entries(byCategory).sort((a, b) => b[1].monthly - a[1].monthly);
+  document.getElementById('byCategory').innerHTML = cats.map(([name, c]) =>
+    '<span class="chip">' + catIcon(name) + ' ' + esc(name) + ' <b>' +
+    fmtMoney(c.monthly) + '/月</b> · ' + fmtMoney(c.daily) + '/天 ×' + c.count + '</span>'
+  ).join('');
+
+  // ③ 订阅列表
+  const sortKey = document.querySelector('#sortSeg button.active').dataset.sort;
+  const sorted = sortSubs(subs, sortKey);
+  document.getElementById('subList').innerHTML = sorted.map((sub) => {
+    const c = calcCosts(sub);
+    const meta = [periodText(sub), renewalText(sub), sub.note].filter(Boolean).join(' · ');
+    return (
+      '<li class="sub-item" data-id="' + esc(sub.id) + '">' +
+        '<div class="icon ' + catIconBg(sub.category) + '">' + catIcon(sub.category) + '</div>' +
+        '<div class="info">' +
+          '<div class="name">' + esc(sub.name) + '</div>' +
+          '<div class="meta">' + esc(meta) + '</div>' +
+        '</div>' +
+        '<div class="cost">' +
+          '<div class="daily">' + fmtMoney(c.daily) + '/天</div>' +
+          '<div class="monthly">' + fmtMoney(c.monthly) + '/月</div>' +
+        '</div>' +
+        '<div class="ops">' +
+          '<button data-action="edit" data-id="' + esc(sub.id) + '" title="编辑">✏️</button>' +
+          '<button data-action="del" data-id="' + esc(sub.id) + '" class="del" title="删除">🗑</button>' +
+        '</div>' +
+      '</li>'
+    );
+  }).join('');
+
+  // ④ 空状态
+  document.getElementById('emptyState').style.display = subs.length ? 'none' : '';
+}
+
+// ---- 增删改表单 ----
+
+// 打开弹窗：sub 为空 → 新增模式；否则 → 编辑模式
+function openDialog(sub) {
+  const f = (id) => document.getElementById(id);
+  f('dialogTitle').textContent = sub ? '编辑订阅' : '添加订阅';
+  f('fId').value = sub ? sub.id : '';
+  f('fName').value = sub ? sub.name : '';
+  f('fCategory').value = sub ? sub.category || '' : '';
+  f('fPeriod').value = sub ? sub.period : 'yearly';
+  f('fAmount').value = sub ? sub.amount : '';
+  f('fYears').value = sub && sub.years ? sub.years : '';
+  f('fStart').value = sub ? sub.start || '' : '';
+  f('fEnd').value = sub ? sub.end || '' : '';
+  f('fNote').value = sub ? sub.note || '' : '';
+  f('yearsField').hidden = (sub ? sub.period : 'yearly') !== 'one_time';
+  f('endField').hidden = (sub ? sub.period : 'yearly') !== 'custom';
+  f('subDialog').showModal();
+  updateLivePreview();
+  f('fName').focus();
+}
+
+function collectForm() {
+  const f = (id) => document.getElementById(id);
+  const period = f('fPeriod').value;
+  return {
+    id: f('fId').value,
+    name: f('fName').value.trim(),
+    category: f('fCategory').value.trim(),
+    period: period,
+    amount: Number(f('fAmount').value) || 0,
+    years: period === 'one_time' ? (Number(f('fYears').value) || 0) : null,
+    start: f('fStart').value,
+    end: f('fEnd').value,
+    note: f('fNote').value.trim(),
+  };
+}
+
+function onSubmit(e) {
+  e.preventDefault();
+  const data = collectForm();
+  if (!data.name) return;
+  if (data.period === 'one_time' && !(data.years > 0)) {
+    toast('一次性买断需要填写「预计使用年数」', 'error');
+    return;
+  }
+  if (data.period === 'custom') {
+    if (!data.start || !data.end) {
+      toast('自定义时间段需要填写开始和结束日期', 'error');
+      return;
+    }
+    if (data.end <= data.start) {
+      toast('结束日期必须晚于开始日期', 'error');
+      return;
+    }
+  }
+  if (data.id) {
+    const i = subs.findIndex((s) => s.id === data.id);
+    if (i >= 0) subs[i] = data;
+  } else {
+    data.id = uid();
+    subs.push(data);
+  }
+  saveSubs(subs);
+  render();
+  document.getElementById('subDialog').close();
+}
+
+function init() {
+  subs = loadSubs();
+
+  // 导出备份（JSON 文件下载）
+  document.getElementById('btnExport').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(subs, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const d = new Date();
+    const localDate = d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+    a.download = '订阅成本备份-' + localDate + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // 导入备份（读取 JSON 文件并校验）
+  document.getElementById('btnImport').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+  });
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const arr = JSON.parse(reader.result);
+        if (!Array.isArray(arr)) throw new Error('bad format');
+        saveSubs(arr.map(normalizeSub));
+        render();
+        toast('导入成功，共 ' + arr.length + ' 条');
+      } catch (err) {
+        toast('导入失败：文件不是有效的备份数据', 'error');
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // 排序：分段控件
+  document.getElementById('sortSeg').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-sort]');
+    if (!btn) return;
+    document.querySelectorAll('#sortSeg button').forEach((b) => b.classList.toggle('active', b === btn));
+    render();
+  });
+
+  // 添加订阅
+  document.getElementById('btnAdd').addEventListener('click', () => openDialog());
+  document.getElementById('btnAddEmpty').addEventListener('click', () => openDialog());
+
+  // 列表：整行点击编辑 + 编辑/删除按钮（事件委托）
+  document.getElementById('subList').addEventListener('click', (e) => {
+    const row = e.target.closest('.sub-item');
+    if (!row) return;
+    const id = row.dataset.id;
+    const sub = subs.find((s) => s.id === id);
+    if (!sub) return;
+    const btn = e.target.closest('button[data-action]');
+    if (btn && btn.dataset.action === 'edit') { openDialog(sub); return; }
+    if (btn && btn.dataset.action === 'del') {
+      askConfirm('确定删除「' + sub.name + '」？').then((ok) => {
+        if (!ok) return;
+        const remove = () => {
+          subs = subs.filter((s) => s.id !== id);
+          saveSubs(subs);
+          render();
+        };
+        if (row) {
+          row.classList.add('leaving'); // 先淡出再删
+          setTimeout(remove, 260);
+        } else remove();
+      });
+      return;
+    }
+    openDialog(sub); // 整行点击 → 编辑
+  });
+
+  // 弹窗内实时预览
+  ['fAmount', 'fPeriod', 'fYears', 'fStart', 'fEnd'].forEach((id) => {
+    document.getElementById(id).addEventListener('input', updateLivePreview);
+    document.getElementById(id).addEventListener('change', updateLivePreview);
+  });
+
+  // CSV 导出
+  document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
+
+  // 跨标签页同步：另一个页面改了数据，这里自动刷新
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) render();
+  });
+
+  // 提醒日历
+  document.getElementById('btnCal').addEventListener('click', openCalendar);
+  document.getElementById('calPrev').addEventListener('click', () => {
+    calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1);
+    calSelected = null;
+    renderCal();
+  });
+  document.getElementById('calNext').addEventListener('click', () => {
+    calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1);
+    calSelected = null;
+    renderCal();
+  });
+  document.getElementById('calClose').addEventListener('click', () => {
+    document.getElementById('calDialog').close();
+  });
+  document.getElementById('calGrid').addEventListener('click', (e) => {
+    const d = e.target.closest('.cal-day[data-d]');
+    if (!d) return;
+    calSelected = { y: calCursor.getFullYear(), m: calCursor.getMonth(), d: +d.dataset.d };
+    renderCal();
+  });
+
+  // 实时时钟：每秒刷新（保证分钟切换及时）
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  // 表单提交（新增/保存）
+  document.getElementById('subForm').addEventListener('submit', onSubmit);
+  document.getElementById('btnCancel').addEventListener('click', () => {
+    document.getElementById('subDialog').close();
+  });
+
+  // 周期切换 → 显示/隐藏「预计使用年数」
+  document.getElementById('fPeriod').addEventListener('change', (e) => {
+    const p = e.target.value;
+    document.getElementById('yearsField').hidden = p !== 'one_time';
+    document.getElementById('endField').hidden = p !== 'custom';
+  });
+
+  // PWA：注册 Service Worker（离线可用；仅 HTTPS/localhost 生效，file:// 下自动跳过）
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

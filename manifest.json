@@ -1,0 +1,15 @@
+{
+  "name": "朝夕 · 订阅每日成本",
+  "short_name": "朝夕",
+  "description": "把年费细算到每一天，提醒每个订阅的到期日",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#007AFF",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

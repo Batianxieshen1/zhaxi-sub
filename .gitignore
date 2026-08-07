@@ -1,0 +1,8 @@
+# 工具运行时缓存
+.reasonix/
+__pycache__/
+*.pyc
+
+# 系统文件
+.DS_Store
+Thumbs.db
