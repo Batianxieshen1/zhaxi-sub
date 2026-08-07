@@ -1,5 +1,5 @@
 // 朝夕 Service Worker：离线可用 + 缓存优先
-const CACHE = 'zhaxi-v1';
+const CACHE = 'zhaxi-v2';
 const ASSETS = [
   './',
   './index.html',
