@@ -61,10 +61,9 @@
   }
   button.primary:hover { background: var(--accent-hover); }
 
-  /* 总览三卡片：每天 / 每月 / 每年（手机宽度下自动 2+1 列） */
+  /* 总览：主次布局 —— 手机 2 列：每天成本放大占整行，每月/每年并排；宽屏恢复 3 列 */
   .overview {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px; margin-bottom: 22px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px;
   }
   .card {
     background: var(--card); border-radius: var(--radius);
@@ -76,12 +75,23 @@
   .card:nth-child(3) { animation-delay: .16s; }
   .card:hover { transform: scale(1.02) translateY(-2px); box-shadow: 0 12px 32px rgba(0, 0, 0, .1); }
   .card .label { font-size: 13px; color: var(--muted); }
-  /* 财报式数字：¥ 小字 + 数字大字 */
+  /* 财报式数字：¥ 小字 + 数字大字（主卡更大） */
   .card .value { display: flex; align-items: baseline; margin-top: 6px; }
-  .card .cur { font-size: 18px; font-weight: 600; color: var(--muted); margin-right: 5px; }
-  .card .num { font-size: 40px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .card .cur { font-size: 14px; font-weight: 600; color: var(--muted); margin-right: 5px; }
+  .card .num { font-size: 32px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .card.hl { grid-column: 1 / -1; }
   .card.hl .cur, .card.hl .num { color: var(--accent); }
+  .card.hl .cur { font-size: 22px; }
+  .card.hl .num { font-size: 52px; }
   .card .hint { font-size: 12px; color: var(--tertiary); margin-top: 4px; }
+  @media (min-width: 700px) {
+    .overview { grid-template-columns: repeat(3, 1fr); }
+    .card.hl { grid-column: auto; }
+    .card .cur { font-size: 18px; }
+    .card .num { font-size: 40px; }
+    .card.hl .cur { font-size: 18px; }
+    .card.hl .num { font-size: 40px; }
+  }
 
   /* 类别汇总 */
   .by-category { margin-bottom: 22px; }
