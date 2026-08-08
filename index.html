@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="deploy-ver" content="2">
+<meta name="deploy-ver" content="3">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>朝夕 · 订阅每日成本</title>
 <meta name="theme-color" content="#007AFF">
@@ -235,6 +235,45 @@
     font-variant-numeric: tabular-nums; letter-spacing: .02em;
   }
 
+  /* 今日到期横幅 */
+  .due-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: linear-gradient(135deg, #eef6ff, #e8f0ff); color: var(--text);
+    border: 1px solid #cfe2ff; border-radius: 14px; padding: 12px 16px;
+    margin: -6px 0 20px; cursor: pointer; font-size: 14px; font-weight: 500;
+    animation: appleIn .5s cubic-bezier(.2, .8, .2, 1) both;
+    transition: transform .2s cubic-bezier(.2, .8, .2, 1);
+  }
+  .due-banner:hover { transform: scale(1.01); }
+  .due-banner .due-arrow { color: var(--accent); font-size: 18px; }
+  .due-banner[hidden] { display: none; }
+
+  /* iOS 开关（已取消） */
+  .switch-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+  .switch-row > span:first-child { color: var(--text); font-size: 13px; }
+  .switch-row .switch { position: absolute; opacity: 0; width: 0; height: 0; }
+  .switch-row .track {
+    width: 46px; height: 28px; border-radius: 999px; background: #e9e9eb;
+    transition: background .25s; position: relative; flex-shrink: 0;
+  }
+  .switch-row .track::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px;
+    border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .2);
+    transition: transform .25s cubic-bezier(.34, 1.56, .64, 1);
+  }
+  .switch-row .switch:checked + .track { background: var(--accent); }
+  .switch-row .switch:checked + .track::after { transform: translateX(18px); }
+
+  /* 已取消订阅：置灰 + 删除线 */
+  .sub-item.inactive { opacity: .45; }
+  .sub-item.inactive .name { text-decoration: line-through; }
+
+  /* 日历本月合计 */
+  .cal-total {
+    font-size: 13px; color: var(--accent); font-weight: 600; text-align: right;
+    margin: 4px 0 10px; font-variant-numeric: tabular-nums;
+  }
+
   /* select 自定义箭头（去掉浏览器默认样式） */
   .field select {
     appearance: none; -webkit-appearance: none;
@@ -300,6 +339,12 @@
     <p>Daily Cost · 年费细算到每一天</p>
     <div class="clock" id="clock"></div>
   </section>
+
+  <!-- 今日到期横幅 -->
+  <div id="dueBanner" class="due-banner" hidden>
+    <span id="dueText"></span>
+    <span class="due-arrow">›</span>
+  </div>
 
   <!-- 总览：双成本视角的核心 -->
   <section class="overview">
@@ -398,6 +443,13 @@
       <label for="fNote">备注</label>
       <input id="fNote" placeholder="可选">
     </div>
+    <div class="field">
+      <label class="switch-row">
+        <span>已取消（不再计入统计）</span>
+        <input type="checkbox" id="fActive" class="switch">
+        <span class="track"></span>
+      </label>
+    </div>
     <div class="live-preview" id="livePreview">≈ 每天 ¥0.00 · 每月 ¥0.00 · 每年 ¥0.00</div>
     <div class="form-actions">
       <button type="button" id="btnCancel">取消</button>
@@ -417,6 +469,7 @@
       </div>
     </div>
     <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-total" id="calTotal"></div>
     <div class="cal-events" id="calEvents"></div>
     <div class="cal-close-row"><button type="button" id="calClose" class="cal-btn">关闭</button></div>
   </div>
@@ -472,6 +525,7 @@ function normalizeSub(s, idx) {
     start: s && typeof s.start === 'string' ? s.start : '',
     end: s && typeof s.end === 'string' ? s.end : '',
     note: s && s.note ? String(s.note) : '',
+    active: !(s && s.active === false),
   };
 }
 
@@ -536,6 +590,7 @@ function summarize(list) {
   const total = { yearly: 0, monthly: 0, daily: 0 };
   const byCategory = {};
   for (const sub of list) {
+    if (sub.active === false) continue; // 已取消的订阅不计入统计
     const c = calcCosts(sub);
     total.yearly += c.yearly;
     total.monthly += c.monthly;
@@ -670,6 +725,7 @@ function calEventsForMonth(y, m) {
   const map = {};
   const lastDay = new Date(y, m + 1, 0).getDate();
   for (const s of subs) {
+    if (s.active === false) continue; // 已取消的不提醒
     if (!s.start || s.period === 'one_time' || s.period === 'custom') continue;
     const d = new Date(s.start + 'T00:00:00');
     if (isNaN(d)) continue;
@@ -705,6 +761,13 @@ function renderCal() {
       d + (has ? '<span class="dots"><i class="dot"></i></span>' : '') + '</div>';
   }
   document.getElementById('calGrid').innerHTML = html;
+
+  // 本月预计支出合计（当月所有到期订阅的应付金额）
+  let monthTotal = 0;
+  for (const day in events) {
+    for (const s of events[day]) monthTotal += Number(s.amount) || 0;
+  }
+  document.getElementById('calTotal').textContent = '本月预计支出：' + fmtMoney(monthTotal);
 
   // 选中日期的到期订阅列表
   const selEvents = calSelected ? events[calSelected.d] : null;
@@ -800,11 +863,12 @@ function renewalText(sub) {
 // 排序：daily/monthly 降序，name 按中文拼音
 function sortSubs(list, key) {
   const arr = [...list];
-  if (key === 'name') return arr.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh'));
+  const activeFirst = (a, b) => (a.active === false ? 1 : 0) - (b.active === false ? 1 : 0);
+  if (key === 'name') return arr.sort((a, b) => activeFirst(a, b) || (a.name || '').localeCompare(b.name || '', 'zh'));
   const get = key === 'monthly'
     ? (s) => calcCosts(s).monthly
     : (s) => calcCosts(s).daily;
-  return arr.sort((a, b) => get(b) - get(a));
+  return arr.sort((a, b) => activeFirst(a, b) || get(b) - get(a));
 }
 
 // 每日成本的「体感」类比，让大数字可感知
@@ -841,9 +905,10 @@ function render() {
   const sorted = sortSubs(subs, sortKey);
   document.getElementById('subList').innerHTML = sorted.map((sub) => {
     const c = calcCosts(sub);
-    const meta = [periodText(sub), renewalText(sub), sub.note].filter(Boolean).join(' · ');
+    const inactive = sub.active === false;
+    const meta = [inactive ? '已取消' : '', periodText(sub), renewalText(sub), sub.note].filter(Boolean).join(' · ');
     return (
-      '<li class="sub-item" data-id="' + esc(sub.id) + '">' +
+      '<li class="sub-item' + (inactive ? ' inactive' : '') + '" data-id="' + esc(sub.id) + '">' +
         '<div class="icon ' + catIconBg(sub.category) + '">' + catIcon(sub.category) + '</div>' +
         '<div class="info">' +
           '<div class="name">' + esc(sub.name) + '</div>' +
@@ -863,6 +928,18 @@ function render() {
 
   // ④ 空状态
   document.getElementById('emptyState').style.display = subs.length ? 'none' : '';
+
+  // ⑤ 今日到期横幅（复用日历事件逻辑）
+  const banner = document.getElementById('dueBanner');
+  const t = new Date();
+  const due = calEventsForMonth(t.getFullYear(), t.getMonth())[t.getDate()] || [];
+  if (due.length) {
+    document.getElementById('dueText').textContent = '🔔 今天有 ' + due.length + ' 个订阅到期：' +
+      due.map((s) => s.name).slice(0, 3).join('、') + (due.length > 3 ? ' 等' : '');
+    banner.hidden = false;
+  } else {
+    banner.hidden = true;
+  }
 }
 
 // ---- 增删改表单 ----
@@ -880,6 +957,7 @@ function openDialog(sub) {
   f('fStart').value = sub ? sub.start || '' : '';
   f('fEnd').value = sub ? sub.end || '' : '';
   f('fNote').value = sub ? sub.note || '' : '';
+  f('fActive').checked = sub ? sub.active !== false : true;
   f('yearsField').hidden = (sub ? sub.period : 'yearly') !== 'one_time';
   f('endField').hidden = (sub ? sub.period : 'yearly') !== 'custom';
   f('subDialog').showModal();
@@ -900,6 +978,7 @@ function collectForm() {
     start: f('fStart').value,
     end: f('fEnd').value,
     note: f('fNote').value.trim(),
+    active: !f('fActive').checked,
   };
 }
 
@@ -1028,6 +1107,7 @@ function init() {
 
   // 提醒日历
   document.getElementById('btnCal').addEventListener('click', openCalendar);
+  document.getElementById('dueBanner').addEventListener('click', openCalendar);
   document.getElementById('calPrev').addEventListener('click', () => {
     calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1);
     calSelected = null;

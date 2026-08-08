@@ -1,5 +1,5 @@
-// 朝夕 Service Worker：离线可用 + 缓存优先
-const CACHE = 'zhaxi-v2';
+// 朝夕 Service Worker：离线可用 + 在线时永远最新版
+const CACHE = 'zhaxi-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -26,8 +26,23 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // 页面导航：先网络后缓存 —— 在线时永远拿到最新版，离线时才用缓存
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(e.request, copy));
+          return res;
+        })
+        .catch(() =>
+          caches.match(e.request).then((hit) => hit || caches.match('./index.html'))
+        )
+    );
+    return;
+  }
+  // 静态资源：缓存优先
   if (e.request.method !== 'GET') return;
-  // 缓存优先：离线也能打开；未缓存的资源在线时拉取并补进缓存
   e.respondWith(
     caches.match(e.request).then((hit) => {
       if (hit) return hit;
@@ -38,6 +53,6 @@ self.addEventListener('fetch', (e) => {
         }
         return res;
       });
-    }).catch(() => caches.match('./index.html'))
+    })
   );
 });

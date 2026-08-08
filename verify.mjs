@@ -175,4 +175,28 @@ ev = calEventsForMonth(2026, 1); // 2 月
 assert.ok(ev[28] && ev[28].some((s) => s.id === 'm2'), '31 号月付在 2 月落到 28 日');
 assert.ok(ev[6] && ev[6].some((s) => s.id === 'm1'), '2 月 6 日月付A 仍续费');
 
+console.log('▶ 取消订阅：统计与提醒排除');
+__setSubs([
+  { id: 'a1', name: '正常A', period: 'monthly', amount: 15, start: '2026-08-06' },
+  { id: 'a2', name: '取消B', period: 'monthly', amount: 50, start: '2026-08-06', active: false },
+  { id: 'a3', name: '年付C', period: 'yearly', amount: 120, start: '2026-08-06' },
+]);
+let s2 = summarize([
+  { id: 'x', name: '正常', period: 'yearly', amount: 100 },
+  { id: 'y', name: '取消', period: 'yearly', amount: 999, active: false },
+]);
+approx(s2.total.yearly, 100); // 已取消的不计入统计
+approx(s2.total.monthly, 100 / 12);
+s2 = summarize([{ id: 'z', name: '老数据', period: 'yearly', amount: 100 }]);
+approx(s2.total.yearly, 100); // 无 active 字段的老数据照常计入
+ev = calEventsForMonth(2026, 7);
+assert.ok(ev[6] && ev[6].length === 2, '已取消的订阅不产生日历事件/提醒');
+const sorted = sortSubs([
+  { id: 'n', name: '正常', period: 'yearly', amount: 1 },
+  { id: 'c', name: '取消', period: 'yearly', amount: 999, active: false },
+], 'daily');
+assert.equal(sorted[0].id, 'n'); // 已取消的排最后
+assert.equal(normalizeSub({ name: 'x', amount: 1 }).active, true);          // 默认未取消
+assert.equal(normalizeSub({ name: 'x', amount: 1, active: false }).active, false);
+
 console.log('✅ 全部断言通过（' + DEFAULT_DATA.length + ' 条示例数据）');
