@@ -357,8 +357,8 @@
     <svg class="logo-svg" viewBox="0 0 260 120" role="img" aria-label="朝夕">
       <text x="30" y="88" font-size="84" class="char-m">朝</text>
       <text x="150" y="88" font-size="84" class="char-e">夕</text>
-      <path id="wavePath" fill="none" stroke="#1d1d1f" stroke-width="2.5" stroke-linecap="round"/>
-      <path id="moonPath" fill="#1d1d1f"/>
+      <path id="wavePath" fill="none" stroke="#FF8A3D" stroke-width="3" stroke-linecap="round"/>
+      <path id="moonPath" fill="#8B5CF6"/>
     </svg>
     <p>Daily Cost · 年费细算到每一天</p>
     <div class="clock" id="clock"></div>
@@ -737,20 +737,20 @@ function decorateLogotype() {
   if (!cm || !ce || !wave || !moon) return;
   const bm = cm.getBBox();
   const be = ce.getBBox();
-  // 「朝」的「月」旁第二横 → 波浪线（右侧中部）
-  const wx = bm.x + bm.width * 0.64;
+  // 「朝」的「月」旁第二横 → 波浪线（右侧中部，晨光橙）
+  const wx = bm.x + bm.width * 0.62;
   const wy = bm.y + bm.height * 0.58;
-  const wl = bm.width * 0.22;
-  const amp = bm.height * 0.035;
+  const wl = bm.width * 0.26;
+  const amp = bm.height * 0.042;
   wave.setAttribute('d',
     'M ' + wx + ' ' + wy +
     ' q ' + (wl / 4) + ' -' + amp + ' ' + (wl / 2) + ' 0' +
     ' q ' + (wl / 4) + ' ' + amp + ' ' + (wl / 2) + ' 0' +
     ' q ' + (wl / 4) + ' -' + amp + ' ' + (wl / 2) + ' 0');
-  // 「夕」的最后一笔（右下点）→ 弯月
+  // 「夕」的最后一笔（右下点）→ 弯月（暮紫）
   const mx = be.x + be.width * 0.84;
   const my = be.y + be.height * 0.78;
-  const mr = be.height * 0.085;
+  const mr = be.height * 0.10;
   moon.setAttribute('d',
     'M ' + (mx - mr) + ' ' + my +
     ' a ' + mr + ' ' + mr + ' 0 1 0 ' + (2 * mr) + ' 0' +
