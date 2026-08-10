@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="deploy-ver" content="5">
+<meta name="deploy-ver" content="6">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>朝夕 · 订阅每日成本</title>
 <meta name="theme-color" content="#007AFF">
@@ -49,7 +49,23 @@
     box-shadow: 0 4px 14px rgba(0, 0, 0, .1);
     animation: appleIn .6s cubic-bezier(.2, .8, .2, 1) both;
   }
-  .hero h2 { font-size: 40px; font-weight: 600; letter-spacing: .08em; margin: 0 0 8px; }
+  .hero h2 { font-size: 40px; font-weight: 600; margin: 0 0 8px; display: flex; align-items: center; justify-content: center; gap: 14px; }
+  /* 朝夕文字 logo：朝=晨光橙，夕=暮蓝紫，中间线性太阳 */
+  .t-morning {
+    background: linear-gradient(135deg, #FFB347, #FF7E33);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: .08em;
+  }
+  .t-evening {
+    background: linear-gradient(135deg, #7C93FF, #8B5CF6);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    letter-spacing: .08em;
+  }
+  .sun-symbol {
+    display: inline-flex; align-items: center; flex-shrink: 0;
+    animation: sunSpin 24s linear infinite;
+  }
+  @keyframes sunSpin { to { transform: rotate(360deg); } }
   .hero p { font-size: 15px; color: var(--muted); margin: 0; }
   main { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
 
@@ -351,7 +367,11 @@
   <!-- 页面标题 -->
   <section class="hero">
     <img src="icon-192.png" alt="朝夕" class="logo-badge">
-    <h2>朝 夕</h2>
+    <h2>
+      <span class="t-morning">朝</span>
+      <span class="sun-symbol" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="5.5" fill="#FF8A3D"/><circle cx="12" cy="12" r="8.2" stroke="#FFB347" stroke-width="1" opacity=".55"/><g stroke="#FF8A3D" stroke-width="1.6" stroke-linecap="round"><line x1="12" y1="1.5" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22.5" y2="12"/><line x1="4.8" y1="4.8" x2="6.6" y2="6.6"/><line x1="17.4" y1="17.4" x2="19.2" y2="19.2"/><line x1="19.2" y1="4.8" x2="17.4" y2="6.6"/><line x1="6.6" y1="17.4" x2="4.8" y2="19.2"/></g></svg></span>
+      <span class="t-evening">夕</span>
+    </h2>
     <p>Daily Cost · 年费细算到每一天</p>
     <div class="clock" id="clock"></div>
   </section>
