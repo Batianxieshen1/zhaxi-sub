@@ -357,7 +357,7 @@
     <svg class="logo-svg" viewBox="0 0 260 120" role="img" aria-label="朝夕">
       <text x="30" y="88" font-size="84" class="char-m">朝</text>
       <text x="150" y="88" font-size="84" class="char-e">夕</text>
-      <path id="wavePath" fill="none" stroke="#FF8A3D" stroke-width="3" stroke-linecap="round"/>
+      <path id="wavePath" fill="none" stroke="#FF8A3D" stroke-width="4" stroke-linecap="round"/>
       <path id="moonPath" fill="#8B5CF6"/>
     </svg>
     <p>Daily Cost · 年费细算到每一天</p>
@@ -738,19 +738,19 @@ function decorateLogotype() {
   const bm = cm.getBBox();
   const be = ce.getBBox();
   // 「朝」的「月」旁第二横 → 波浪线（右侧中部，晨光橙）
-  const wx = bm.x + bm.width * 0.62;
+  const wx = bm.x + bm.width * 0.60;
   const wy = bm.y + bm.height * 0.58;
-  const wl = bm.width * 0.26;
-  const amp = bm.height * 0.042;
+  const wl = bm.width * 0.30;
+  const amp = bm.height * 0.055;
   wave.setAttribute('d',
     'M ' + wx + ' ' + wy +
     ' q ' + (wl / 4) + ' -' + amp + ' ' + (wl / 2) + ' 0' +
     ' q ' + (wl / 4) + ' ' + amp + ' ' + (wl / 2) + ' 0' +
     ' q ' + (wl / 4) + ' -' + amp + ' ' + (wl / 2) + ' 0');
   // 「夕」的最后一笔（右下点）→ 弯月（暮紫）
-  const mx = be.x + be.width * 0.84;
-  const my = be.y + be.height * 0.78;
-  const mr = be.height * 0.10;
+  const mx = be.x + be.width * 0.82;
+  const my = be.y + be.height * 0.76;
+  const mr = be.height * 0.16;
   moon.setAttribute('d',
     'M ' + (mx - mr) + ' ' + my +
     ' a ' + mr + ' ' + mr + ' 0 1 0 ' + (2 * mr) + ' 0' +
