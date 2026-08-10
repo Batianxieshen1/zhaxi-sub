@@ -43,7 +43,12 @@
   .topbar h1 { font-size: 16px; font-weight: 600; letter-spacing: .08em; }
   .topbar .actions { display: flex; gap: 8px; }
   /* 页面标题（苹果式居中大标题） */
-  .hero { text-align: center; padding: 34px 0 26px; }
+  .hero { text-align: center; padding: 30px 0 26px; }
+  .logo-badge {
+    width: 60px; height: 60px; border-radius: 15px; margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .1);
+    animation: appleIn .6s cubic-bezier(.2, .8, .2, 1) both;
+  }
   .hero h2 { font-size: 40px; font-weight: 600; letter-spacing: .08em; margin: 0 0 8px; }
   .hero p { font-size: 15px; color: var(--muted); margin: 0; }
   main { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
@@ -345,6 +350,7 @@
 <main>
   <!-- 页面标题 -->
   <section class="hero">
+    <img src="icon-192.png" alt="朝夕" class="logo-badge">
     <h2>朝 夕</h2>
     <p>Daily Cost · 年费细算到每一天</p>
     <div class="clock" id="clock"></div>

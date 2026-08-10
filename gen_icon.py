@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""生成 PWA 图标：蓝底圆角方块 + 白色日历图形（纯标准库，无外部依赖）。
-输出：icon-512.png / icon-192.png / apple-touch-icon.png(180)"""
+"""生成「朝夕」应用图标（Abstract Editorial 风格）：
+暖象牙白天空 + 深墨太阳 + 两条柔和色带（雾蓝/陶土）。
+纯标准库手写 PNG，无外部依赖。输出：icon-512/192/apple-touch-icon.png"""
 import zlib, struct, math, os
 
-ACCENT = (0x00, 0x7A, 0xFF, 255)   # iOS 系统蓝
-WHITE  = (0xFF, 0xFF, 0xFF, 255)
+# 调色板（muted palette，低饱和）
+IVORY   = (242, 237, 227, 255)   # 暖象牙白（天空/面板）
+INK     = (58, 59, 64, 255)      # 深墨（太阳）
+MIST    = (143, 163, 184, 255)   # 雾蓝（色带 1）
+CLAY    = (196, 138, 110, 255)   # 陶土（色带 2）
 
 def clamp(v, lo=0.0, hi=1.0):
     return max(lo, min(hi, v))
 
 def rounded_rect_sdf(px, py, cx, cy, hw, hh, r):
-    """点到圆角矩形的有向距离（负=内部）"""
     qx = abs(px - cx) - (hw - r)
     qy = abs(py - cy) - (hh - r)
     ax, ay = max(qx, 0.0), max(qy, 0.0)
@@ -20,44 +23,39 @@ def circle_sdf(px, py, cx, cy, r):
     return math.hypot(px - cx, py - cy) - r
 
 def alpha_from(d):
-    """1px 抗锯齿：距离 -0.5..0.5 → alpha 1..0"""
     return clamp(0.5 - d, 0.0, 1.0)
 
+def band_color(y, size):
+    """水平色带：雾蓝在上、陶土在下（y 为 0..size 像素坐标）"""
+    u = y / size
+    if 0.62 <= u < 0.79:
+        return MIST
+    if 0.79 <= u < 0.96:
+        return CLAY
+    return None  # 天空/留白
+
 def make_icon(size):
-    px = bytearray()  # 每行 [filter=0] + RGBA
+    px = bytearray()
+    cx_sun, cy_sun, r_sun = size * 0.5, size * 0.53, size * 0.135
     for y in range(size):
         px.append(0)
         for x in range(size):
             u, v = x + 0.5, y + 0.5
-            # 背景：蓝底圆角方块（圆角 ≈ 22%）
-            bg_d = rounded_rect_sdf(u, v, size/2, size/2, size/2, size/2, size * 0.22)
+            bg_d = rounded_rect_sdf(u, v, size / 2, size / 2, size / 2, size / 2, size * 0.22)
             bg_a = alpha_from(bg_d)
             if bg_a <= 0:
-                px += bytes((0, 0, 0, 0)); continue
-            # 白色日历框：外框 - 内框
-            frame_d = max(
-                rounded_rect_sdf(u, v, size/2, size/2, size*0.40, size*0.36, size*0.07),
-                -rounded_rect_sdf(u, v, size/2, size/2, size*0.30, size*0.26, size*0.045),
-            )
-            frame_a = alpha_from(frame_d) * bg_a
-            # 顶部提手孔：两个小圆点（蓝色挖空）
-            hole1 = circle_sdf(u, v, size*0.40, size*0.155, size*0.028)
-            hole2 = circle_sdf(u, v, size*0.60, size*0.155, size*0.028)
-            hole_a = alpha_from(hole1) + alpha_from(hole2)
-            # 内部日期点阵：3 行 x 4 列 白色圆点
-            dots_a = 0.0
-            for row in range(3):
-                for col in range(4):
-                    cx = size * (0.28 + 0.147 * col)
-                    cy = size * (0.50 + 0.125 * row)
-                    dots_a = max(dots_a, alpha_from(circle_sdf(u, v, cx, cy, size * 0.035)))
-            # 合成：白框（去掉孔）+ 白点
-            white_a = clamp(frame_a - hole_a + dots_a, 0.0, 1.0) * bg_a
-            r = ACCENT[0] * (1 - white_a) + WHITE[0] * white_a
-            g = ACCENT[1] * (1 - white_a) + WHITE[1] * white_a
-            b = ACCENT[2] * (1 - white_a) + WHITE[2] * white_a
+                px += bytes((0, 0, 0, 0))
+                continue
+            # 深墨太阳优先（压在地平线上）
+            sun_d = circle_sdf(u, v, cx_sun, cy_sun, r_sun)
+            sun_a = alpha_from(sun_d) * bg_a
+            if sun_a > 0:
+                px += bytes((INK[0], INK[1], INK[2], int(round(sun_a * 255))))
+                continue
+            # 色带 / 天空
+            c = band_color(v, size) or IVORY
             a = int(round(bg_a * 255))
-            px += bytes((int(round(r * bg_a / (bg_a or 1))), int(round(g * bg_a / (bg_a or 1))), int(round(b * bg_a / (bg_a or 1))), a))
+            px += bytes((c[0], c[1], c[2], a))
     return px
 
 def write_png(path, size, raw):
