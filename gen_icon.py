@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
-"""生成「朝夕」应用图标 v2（Abstract Editorial 风格，复杂版）：
-暖象牙白天空 + 深墨太阳 + 日晷主竖笔 + 从属细竖笔 + 三条错位柔色带。
+"""生成「朝夕」应用图标 v3（破晓风，高辨识度）：
+深蓝紫夜空渐变 + 晨光太阳（橙黄渐变+光晕）+ 荧光青破晓线 + 深色大地 + 星光。
 纯标准库手写 PNG。输出：icon-512/192/apple-touch-icon.png"""
 import zlib, struct, math, os
 
-# 调色板（muted palette）
-IVORY = (242, 237, 227, 255)   # 暖象牙白
-INK   = (58, 59, 64, 255)      # 深墨
-MIST  = (143, 163, 184, 255)   # 雾蓝
-SAND  = (216, 195, 154, 255)   # 沙色
-CLAY  = (196, 138, 110, 255)   # 陶土
+# 调色板
+NIGHT_TOP = (21, 34, 66)      # 深蓝夜
+NIGHT_BOT = (61, 44, 99)      # 深紫
+SUN_TOP   = (255, 226, 154)   # 晨光亮黄
+SUN_BOT   = (255, 126, 51)    # 落日橙
+GLOW      = (255, 170, 80)    # 光晕橙
+DAWN_LINE = (94, 234, 212)    # 荧光青（破晓线）
+LAND      = (14, 22, 38)      # 深墨蓝大地
+STAR      = (255, 255, 255)   # 星光
 
 def clamp(v, lo=0.0, hi=1.0):
     return max(lo, min(hi, v))
+
+def lerp(a, b, t):
+    return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 def rounded_rect_sdf(px, py, cx, cy, hw, hh, r):
     qx = abs(px - cx) - (hw - r)
@@ -26,28 +32,12 @@ def circle_sdf(px, py, cx, cy, r):
 def alpha_from(d):
     return clamp(0.5 - d, 0.0, 1.0)
 
-def stroke_alpha(x, y, cx, y0, y1, half_w):
-    """竖笔（矩形）带 1px 抗锯齿：宽 2*half_w，从 y0 到 y1"""
-    dx = clamp(0.5 - (abs(x - cx) - half_w), 0.0, 1.0)
-    if dx <= 0:
-        return 0.0
-    dy = min(clamp(0.5 - (y0 - y), 0.0, 1.0), clamp(0.5 - (y - y1), 0.0, 1.0))
-    return dx * dy
-
-def band_color(x, y, size):
-    """三条错位色带：雾蓝 / 沙色（左缺口）/ 陶土"""
-    u, v = x / size, y / size
-    if 0.60 <= v < 0.71:
-        return MIST
-    if 0.71 <= v < 0.82:
-        return SAND if u >= 0.12 else None
-    if 0.82 <= v < 0.93:
-        return CLAY
-    return None
-
 def make_icon(size):
     px = bytearray()
-    cx_sun, cy_sun, r_sun = size * 0.5, size * 0.47, size * 0.13
+    cx_sun, cy_sun, r_sun = size * 0.5, size * 0.52, size * 0.19
+    glow_w = size * 0.11
+    # 星光：三颗小白点
+    stars = [(0.22, 0.22), (0.74, 0.16), (0.62, 0.32)]
     for y in range(size):
         px.append(0)
         for x in range(size):
@@ -57,24 +47,34 @@ def make_icon(size):
             if bg_a <= 0:
                 px += bytes((0, 0, 0, 0))
                 continue
-            # 太阳（最后判定，覆盖主笔顶端，形成"指针从太阳垂下"）
-            sun_a = alpha_from(circle_sdf(u, v, cx_sun, cy_sun, r_sun)) * bg_a
-            if sun_a > 0:
-                px += bytes((INK[0], INK[1], INK[2], int(round(sun_a * 255))))
-                continue
-            # 从属竖笔 → 主竖笔（深墨，从属更细更短）
-            sub_a = stroke_alpha(u, v, size * 0.72, size * 0.66, size * 0.88, size * 0.010) * bg_a
-            main_a = stroke_alpha(u, v, size * 0.5, size * 0.47, size * 0.96, size * 0.0175) * bg_a
-            if sub_a > 0:
-                px += bytes((INK[0], INK[1], INK[2], int(round(sub_a * 255))))
-                continue
-            if main_a > 0:
-                px += bytes((INK[0], INK[1], INK[2], int(round(main_a * 255))))
-                continue
-            # 色带 / 天空
-            c = band_color(u, v, size) or IVORY
+            t = v / size
+            col = lerp(NIGHT_TOP, NIGHT_BOT, t)  # 夜空垂直渐变
+            # 大地（底部）
+            if v >= size * 0.80:
+                col = LAND
+            # 破晓青线（地平线上方一条细光）
+            elif size * 0.765 <= v <= size * 0.795:
+                col = DAWN_LINE
+            else:
+                # 星光
+                for (sx, sy) in stars:
+                    if alpha_from(circle_sdf(u, v, size * sx, size * sy, size * 0.008)) > 0:
+                        col = STAR
+                        break
+                # 太阳光晕（半透明橙，柔和衰减）
+                glow_d = circle_sdf(u, v, cx_sun, cy_sun, r_sun + glow_w)
+                glow_a = alpha_from(glow_d) if glow_d < 0 else 0.0
+                # 简化：晕圈 alpha 随距离衰减
+                d_sun = circle_sdf(u, v, cx_sun, cy_sun, r_sun)
+                if d_sun < glow_w * 1.2:
+                    g = clamp(1.0 - max(d_sun - r_sun, 0.0) / glow_w, 0.0, 1.0) * 0.5
+                    col = lerp(col, GLOW, g)
+                # 太阳（橙黄渐变，顶部亮黄 → 底部落日橙）
+                if d_sun < 0:
+                    tt = clamp((v - (cy_sun - r_sun)) / (2 * r_sun), 0.0, 1.0)
+                    col = lerp(SUN_TOP, SUN_BOT, tt)
             a = int(round(bg_a * 255))
-            px += bytes((c[0], c[1], c[2], a))
+            px += bytes((col[0], col[1], col[2], a))
     return px
 
 def write_png(path, size, raw):
