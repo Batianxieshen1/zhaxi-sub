@@ -27,7 +27,6 @@
     --danger: #ff3b30;
     --hairline: rgba(0, 0, 0, .08);
     --radius: 20px;
-    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -122,7 +121,7 @@
   /* 财报式数字：¥ 小字 + 数字大字（主卡更大） */
   .card .value { display: flex; align-items: baseline; margin-top: 6px; }
   .card .cur { font-size: 14px; font-weight: 600; color: var(--muted); margin-right: 5px; }
-  .card .num { font-size: 32px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; font-family: var(--mono); }
+  .card .num { font-size: 32px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
   .card.hl { grid-column: 1 / -1; }
   .card.hl .cur, .card.hl .num { color: var(--accent); }
   .card.hl .cur { font-size: 22px; }
@@ -144,7 +143,7 @@
     background: var(--card); border-radius: 999px; padding: 6px 16px; font-size: 13px; margin: 0 8px 8px 0;
     box-shadow: 0 1px 6px rgba(30, 50, 90, .06);
   }
-  .chip b { color: var(--accent); font-family: var(--mono); }
+  .chip b { color: var(--accent); }
   .chip svg { width: 14px; height: 14px; vertical-align: -2px; }
 
   /* 类别占比环形图（内高光） */
@@ -158,7 +157,7 @@
   .donut-svg { width: 116px; height: 116px; flex-shrink: 0; }
   .donut-svg circle { transition: stroke-width .2s; }
   .donut-svg circle.hovered { stroke-width: 18; }
-  .donut-total { font-size: 16px; font-weight: 700; fill: var(--text); font-family: var(--mono); }
+  .donut-total { font-size: 16px; font-weight: 700; fill: var(--text); }
   .donut-label { font-size: 9px; fill: var(--tertiary); }
   .donut-legend { flex: 1; min-width: 0; }
   .donut-item {
@@ -168,7 +167,7 @@
   .donut-item.hovered { background: #f2f2f7; }
   .donut-item .donut-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
   .donut-item b { margin-left: auto; font-variant-numeric: tabular-nums; }
-  .donut-item .donut-amt { color: var(--tertiary); font-size: 12px; margin-left: 10px; font-variant-numeric: tabular-nums; font-family: var(--mono); }
+  .donut-item .donut-amt { color: var(--tertiary); font-size: 12px; margin-left: 10px; font-variant-numeric: tabular-nums; }
 
   /* 顶栏日历按钮红点 */
   #btnCal { position: relative; }
@@ -224,8 +223,8 @@
   .sub-item .name { font-weight: 600; }
   .sub-item .meta { font-size: 12px; color: var(--muted); }
   .sub-item .cost { text-align: right; flex-shrink: 0; }
-  .sub-item .cost .daily { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; font-family: var(--mono); }
-  .sub-item .cost .monthly { font-size: 12px; color: var(--tertiary); font-family: var(--mono); }
+  .sub-item .cost .daily { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .sub-item .cost .monthly { font-size: 12px; color: var(--tertiary); }
   .sub-item .ops { display: flex; gap: 4px; flex-shrink: 0; }
   .sub-item .ops button { padding: 7px 11px; font-size: 13px; }
   .sub-item .ops button.del:hover { color: var(--danger); background: #ffe5e2; }
@@ -276,7 +275,6 @@
   .live-preview {
     font-size: 13px; color: var(--accent); font-weight: 500;
     background: #eef6ff; border-radius: 10px; padding: 9px 12px; margin-bottom: 4px;
-    font-family: var(--mono);
   }
 
   /* 空状态 */
@@ -334,7 +332,7 @@
   /* 实时时钟 */
   .clock {
     font-size: 13px; color: var(--tertiary); margin-top: 10px;
-    font-variant-numeric: tabular-nums; letter-spacing: .02em; font-family: var(--mono);
+    font-variant-numeric: tabular-nums; letter-spacing: .02em;
   }
 
   /* 今日到期横幅 */
@@ -377,7 +375,7 @@
   /* 日历本月合计 */
   .cal-total {
     font-size: 13px; color: var(--accent); font-weight: 600; text-align: right;
-    margin: 4px 0 10px; font-variant-numeric: tabular-nums; font-family: var(--mono);
+    margin: 4px 0 10px; font-variant-numeric: tabular-nums;
   }
 
   /* select 自定义箭头（去掉浏览器默认样式） */
