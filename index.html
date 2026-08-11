@@ -116,6 +116,7 @@
     box-shadow: 0 1px 6px rgba(30, 50, 90, .06);
   }
   .chip b { color: var(--accent); }
+  .chip svg { width: 14px; height: 14px; vertical-align: -2px; }
 
   /* 类别占比环形图 */
   .donut-wrap {
@@ -429,17 +430,17 @@
   <!-- 总览：双成本视角的核心 -->
   <section class="overview">
     <div class="card hl">
-      <div class="label">☀️ 每天成本</div>
+      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>每天成本</div>
       <div class="value" id="totalDaily"><span class="cur">¥</span><span class="num">0.00</span></div>
       <div class="hint" id="dailyHint">所有订阅平摊到每天</div>
     </div>
     <div class="card">
-      <div class="label">📅 每月成本</div>
+      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每月成本</div>
       <div class="value" id="totalMonthly"><span class="cur">¥</span><span class="num">0.00</span></div>
       <div class="hint">所有订阅平摊到每月</div>
     </div>
     <div class="card">
-      <div class="label">🗓 每年成本</div>
+      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/></svg>每年成本</div>
       <div class="value" id="totalYearly"><span class="cur">¥</span><span class="num">0.00</span></div>
       <div class="hint">按年汇总</div>
     </div>
@@ -915,13 +916,29 @@ function openCalendar() {
   document.getElementById('calDialog').showModal();
 }
 
-const CAT_ICONS = { '视频': '🎬', '音乐': '🎵', '工具': '🛠', '学习': '📚', '生活': '🏠', '其他': '📦' };
+// 类别单色线性图标（Feather 风格）+ 深色系（与浅色块呼应）
+const CAT_ICONS = {
+  '视频': { d: '<polygon points="5 3 19 12 5 21 5 3"/>', color: '#C25E4C' },
+  '音乐': { d: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>', color: '#4A7BD1' },
+  '工具': { d: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>', color: '#3E9C6B' },
+  '学习': { d: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>', color: '#C08A3E' },
+  '生活': { d: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>', color: '#4A7BD1' },
+  '其他': { d: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>', color: '#8A6A46' },
+};
+const CAT_ICON_FALLBACK = { d: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>', color: '#6B7280' };
 
-// 类别图标底色（多彩活力风格）
+// 类别图标底色（浅色块）
 const CAT_ICON_BG = { '视频': 'i1', '音乐': 'i2', '工具': 'i3', '学习': 'i4', '生活': 'i2', '其他': 'i4' };
 
 function catIconBg(cat) {
   return CAT_ICON_BG[cat] || 'i4';
+}
+
+// 返回单色线性图标 SVG（stroke 用类别深色）
+function catIcon(cat) {
+  const c = CAT_ICONS[cat] || CAT_ICON_FALLBACK;
+  return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="' + c.color +
+    '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + c.d + '</svg>';
 }
 
 // 转义用户输入，防止特殊字符破坏页面
@@ -929,10 +946,6 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (ch) => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
   ));
-}
-
-function catIcon(cat) {
-  return CAT_ICONS[cat] || '📦';
 }
 
 // 计费周期描述：如「¥15/月」「¥68/年」「¥698 买断 / 3 年」
