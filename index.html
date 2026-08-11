@@ -337,9 +337,12 @@
   .due-banner .due-icon { width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; color: var(--accent); }
   .due-banner[hidden] { display: none; }
 
-  /* iOS 开关（已取消） */
+  /* iOS 开关（计入统计） */
   .switch-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
-  .switch-row > span:first-child { color: var(--text); font-size: 13px; }
+  .switch-row > span:first-child { color: var(--text); font-size: 13px; transition: color .2s; }
+  .switch-row > span:first-child.off { color: var(--muted); text-decoration: line-through; }
+  .switch-hint { font-size: 11px; color: var(--tertiary); margin-top: 4px; transition: color .2s; }
+  .switch-hint.off { color: var(--danger); }
   .switch-row .switch { position: absolute; opacity: 0; width: 0; height: 0; }
   .switch-row .track {
     width: 46px; height: 28px; border-radius: 999px; background: #e9e9eb;
@@ -561,10 +564,11 @@
     </div>
     <div class="field">
       <label class="switch-row">
-        <span>已取消（不再计入统计）</span>
+        <span id="activeLabel">计入统计</span>
         <input type="checkbox" id="fActive" class="switch">
         <span class="track"></span>
       </label>
+      <div class="switch-hint" id="activeHint">开关打开：正常计入总览、日历与提醒</div>
     </div>
     <div class="live-preview" id="livePreview">≈ 每天 ¥0.00 · 每月 ¥0.00 · 每年 ¥0.00</div>
     <div class="form-actions">
@@ -818,6 +822,22 @@ function updateLivePreview() {
   if (!el) return;
   const c = calcCosts(collectForm());
   el.textContent = '≈ 每天 ' + fmtMoney(c.daily) + ' · 每月 ' + fmtMoney(c.monthly) + ' · 每年 ' + fmtMoney(c.yearly);
+}
+
+// 「计入统计」开关：状态文字 + 后果提示 + 预览联动
+function updateActiveUI() {
+  const on = document.getElementById('fActive').checked;
+  const label = document.getElementById('activeLabel');
+  const hint = document.getElementById('activeHint');
+  const preview = document.getElementById('livePreview');
+  label.textContent = on ? '计入统计' : '已取消 · 不统计';
+  label.classList.toggle('off', !on);
+  hint.textContent = on
+    ? '开关打开：正常计入总览、日历与提醒'
+    : '关闭后：不计入总览、日历与提醒，列表置灰';
+  hint.classList.toggle('off', !on);
+  if (preview) preview.style.opacity = on ? '1' : '.45';
+  updateLivePreview();
 }
 
 // ---- 朝夕文字 logo：笔画创意（方案 B 日月星辰）----
@@ -1198,6 +1218,7 @@ function openDialog(sub) {
   f('fEnd').value = sub ? sub.end || '' : '';
   f('fNote').value = sub ? sub.note || '' : '';
   f('fActive').checked = sub ? sub.active !== false : true;
+  updateActiveUI();
   f('yearsField').hidden = (sub ? sub.period : 'yearly') !== 'one_time';
   f('endField').hidden = (sub ? sub.period : 'yearly') !== 'custom';
   f('subDialog').showModal();
@@ -1386,6 +1407,9 @@ function init() {
     document.getElementById('fCategory').value = btn.dataset.cat;
     updateLivePreview();
   });
+
+  // 「计入统计」开关：状态联动
+  document.getElementById('fActive').addEventListener('change', updateActiveUI);
 
   // 周期切换 → 显示/隐藏「预计使用年数」
   document.getElementById('fPeriod').addEventListener('change', (e) => {
