@@ -98,9 +98,9 @@ assert.equal(fmtDate(nextRenewalDate({ period: 'yearly', start: '2026-03-01' }, 
 assert.equal(nextRenewalDate({ period: 'yearly', start: '' }, '2026-08-06'), null);
 assert.equal(renewalText({ period: 'one_time', start: '2026-08-06' }), '');
 assert.equal(renewalText({ period: 'custom', start: '2026-03-01', end: '2026-08-31' }), '');
-// 续费日必须带年份，避免跨年歧义（如「下次续费：2026年9月6日」）
-assert.match(renewalText({ period: 'monthly', start: '2026-08-06' }), /^下次续费：\d{4}年\d{1,2}月\d{1,2}日$/);
-assert.match(renewalText({ period: 'yearly', start: '2026-08-06' }), /^下次续费：\d{4}年\d{1,2}月\d{1,2}日$/);
+// 续费日必须带年份，避免跨年歧义；可带天数紧迫度后缀（如「 · 6 天后」「 · 今天到期」）
+assert.match(renewalText({ period: 'monthly', start: '2026-08-06' }), /^下次续费：\d{4}年\d{1,2}月\d{1,2}日( · (今天到期|明天|\d+ 天后))?$/);
+assert.match(renewalText({ period: 'yearly', start: '2026-08-06' }), /^下次续费：\d{4}年\d{1,2}月\d{1,2}日( · (今天到期|明天|\d+ 天后))?$/);
 
 console.log('▶ 边界：金额为 0 / 非法日期');
 c = calcCosts({ period: 'yearly', amount: 0 });

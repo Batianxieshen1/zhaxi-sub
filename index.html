@@ -110,6 +110,46 @@
   }
   .chip b { color: var(--accent); }
 
+  /* 类别占比环形图 */
+  .donut-wrap {
+    display: flex; align-items: center; gap: 22px;
+    background: var(--card); border-radius: 20px; padding: 18px 22px; margin-bottom: 22px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .04);
+    animation: appleIn .7s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .donut-wrap[hidden] { display: none; }
+  .donut-svg { width: 116px; height: 116px; flex-shrink: 0; }
+  .donut-svg circle { transition: stroke-width .2s; }
+  .donut-svg circle.hovered { stroke-width: 18; }
+  .donut-total { font-size: 16px; font-weight: 700; fill: var(--text); }
+  .donut-label { font-size: 9px; fill: var(--tertiary); }
+  .donut-legend { flex: 1; min-width: 0; }
+  .donut-item {
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
+    padding: 4px 6px; border-radius: 8px; cursor: default;
+  }
+  .donut-item.hovered { background: #f2f2f7; }
+  .donut-item .donut-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .donut-item b { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .donut-item .donut-amt { color: var(--tertiary); font-size: 12px; margin-left: 10px; font-variant-numeric: tabular-nums; }
+
+  /* 顶栏日历按钮红点 */
+  #btnCal { position: relative; }
+  .cal-dot {
+    position: absolute; top: 5px; right: 5px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--danger); border: 1.5px solid #fff;
+  }
+  .cal-dot[hidden] { display: none; }
+
+  /* 表单类别快捷选择 */
+  .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .cat-chips button {
+    border: none; background: #f2f2f7; color: var(--text); font: inherit;
+    font-size: 12px; padding: 4px 12px; border-radius: 999px; cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .cat-chips button:hover { background: #e3edff; color: var(--accent); }
+
   /* 列表区 */
   .section-head {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
@@ -319,7 +359,13 @@
     transition: background .15s;
   }
   .cal-day:hover { background: #f2f2f7; }
-  .cal-day.today { background: var(--accent); color: #fff; font-weight: 600; }
+  /* iOS 日历同款：今天 = 红字 + 红色圆环 */
+  .cal-day.today { background: transparent; color: #ff3b30; font-weight: 700; }
+  .cal-day.today::after {
+    content: ''; position: absolute; inset: 2px;
+    border: 1.6px solid #ff3b30; border-radius: 50%;
+  }
+  .cal-day.today .dot { background: #ff3b30; }
   .cal-day.sel { outline: 2px solid var(--accent); outline-offset: 1px; }
   .cal-day .dots { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); display: flex; gap: 2px; }
   .cal-day .dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
@@ -342,7 +388,7 @@
 <header class="topbar">
   <h1>朝 夕</h1>
   <div class="actions">
-    <button id="btnCal" title="提醒日历：查看订阅到期日">📅</button>
+    <button id="btnCal" title="提醒日历：查看订阅到期日">📅<span id="calDot" class="cal-dot" hidden></span></button>
     <button id="btnExport" title="导出数据备份">导出</button>
     <button id="btnExportCSV" title="导出 CSV（Excel 可打开）">CSV</button>
     <button id="btnImport" title="导入备份文件">导入</button>
@@ -390,6 +436,17 @@
     </div>
   </section>
 
+  <!-- 类别占比环形图 -->
+  <section class="donut-wrap" id="donutWrap" hidden>
+    <svg class="donut-svg" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="45" fill="none" stroke="#F0F1F5" stroke-width="14"/>
+      <g id="donutSegs"></g>
+      <text x="60" y="57" text-anchor="middle" class="donut-total" id="donutTotal">¥0</text>
+      <text x="60" y="72" text-anchor="middle" class="donut-label">每月</text>
+    </svg>
+    <div class="donut-legend" id="donutLegend"></div>
+  </section>
+
   <!-- 类别汇总 -->
   <section class="by-category" id="byCategory"></section>
 
@@ -406,7 +463,7 @@
     </div>
     <ul class="sub-list" id="subList"></ul>
     <div class="empty" id="emptyState">
-      <div class="empty-icon">🧾</div>
+      <div class="empty-icon"><svg width="96" height="96" viewBox="0 0 96 96" fill="none" aria-hidden="true"><circle cx="48" cy="48" r="42" stroke="#E5E7EB" stroke-width="2.5"/><path d="M30 36h36M30 48h36M30 60h22" stroke="#C7CDD8" stroke-width="3" stroke-linecap="round"/><circle cx="66" cy="24" r="7" fill="#FFD9A0"/><path d="M66 10v5M66 33v5M52 24h5M75 24h5" stroke="#FFD9A0" stroke-width="2.5" stroke-linecap="round"/></svg></div>
       <div class="empty-title">还没有订阅记录</div>
       <div class="empty-sub">把会员、年费都记下来，看看每天到底花多少</div>
       <button id="btnAddEmpty" class="primary">＋ 添加第一笔</button>
@@ -434,6 +491,7 @@
         <option value="生活"></option>
         <option value="其他"></option>
       </datalist>
+      <div class="cat-chips" id="catChips"></div>
     </div>
     <div class="row2">
       <div class="field">
@@ -503,7 +561,7 @@
 <!-- 通用确认弹窗（替换原生 confirm） -->
 <dialog id="confirmDialog">
   <div class="confirm-body">
-    <div class="confirm-icon">🗑</div>
+    <div class="confirm-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ff3b30" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div>
     <h3 id="confirmMsg">确定删除？</h3>
     <div class="confirm-actions">
       <button type="button" id="confirmCancel">取消</button>
@@ -919,7 +977,12 @@ function nextRenewalDate(sub, now) {
 function renewalText(sub) {
   if (!sub.start || sub.period === 'one_time' || sub.period === 'custom') return '';
   const d = nextRenewalDate(sub);
-  return d ? '下次续费：' + d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日' : '';
+  if (!d) return '';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((d - today) / 86400000);
+  const suffix = days === 0 ? ' · 今天到期' : days === 1 ? ' · 明天' : (days > 0 && days <= 30 ? ' · ' + days + ' 天后' : '');
+  return '下次续费：' + d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日' + suffix;
 }
 
 // 排序：daily/monthly 降序，name 按中文拼音
@@ -931,6 +994,69 @@ function sortSubs(list, key) {
     ? (s) => calcCosts(s).monthly
     : (s) => calcCosts(s).daily;
   return arr.sort((a, b) => activeFirst(a, b) || get(b) - get(a));
+}
+
+// 类别占比环形图：按每月成本绘制 + hover 联动
+const DONUT_COLORS = ['#FF8A3D', '#8B5CF6', '#0EA5E9', '#10B981', '#F59E0B', '#EC4899', '#64748B'];
+
+function renderDonut(byCategory) {
+  const wrap = document.getElementById('donutWrap');
+  const cats = Object.entries(byCategory).sort((a, b) => b[1].monthly - a[1].monthly);
+  if (!cats.length) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  const total = cats.reduce((s, [, c]) => s + c.monthly, 0) || 0;
+  const R = 45, C = 2 * Math.PI * R;
+  let acc = 0, segs = '', legend = '';
+  cats.forEach(([name, c], i) => {
+    const frac = total > 0 ? c.monthly / total : 0;
+    const color = DONUT_COLORS[i % DONUT_COLORS.length];
+    const dash = Math.max(frac * C, total > 0 ? 0.5 : 0);
+    segs += '<circle cx="60" cy="60" r="' + R + '" fill="none" stroke="' + color +
+      '" stroke-width="14" stroke-dasharray="' + dash + ' ' + (C - dash) + '"' +
+      ' stroke-dashoffset="' + (-acc * C) + '" transform="rotate(-90 60 60)"' +
+      ' data-cat="' + esc(name) + '"/>';
+    legend += '<div class="donut-item" data-cat="' + esc(name) + '">' +
+      '<span class="donut-dot" style="background:' + color + '"></span>' + esc(name) +
+      '<b>' + Math.round(frac * 100) + '%</b><span class="donut-amt">' + fmtMoney(c.monthly) + '/月</span></div>';
+    acc += frac;
+  });
+  document.getElementById('donutSegs').innerHTML = segs;
+  document.getElementById('donutLegend').innerHTML = legend;
+  document.getElementById('donutTotal').textContent = fmtMoney(total);
+}
+
+// 环形图 hover 联动（段 ↔ 图例）
+function bindDonutHover() {
+  const wrap = document.getElementById('donutWrap');
+  if (!wrap || wrap.dataset.bound) return;
+  wrap.dataset.bound = '1';
+  const segs = document.getElementById('donutSegs');
+  const legend = document.getElementById('donutLegend');
+  const setHover = (cat, on) => {
+    segs.querySelectorAll('circle').forEach((c) => c.classList.toggle('hovered', on && c.dataset.cat === cat));
+    legend.querySelectorAll('.donut-item').forEach((i) => i.classList.toggle('hovered', on && i.dataset.cat === cat));
+  };
+  segs.addEventListener('mouseover', (e) => {
+    const c = e.target.closest('circle[data-cat]');
+    if (c) setHover(c.dataset.cat, true);
+  });
+  segs.addEventListener('mouseout', () => setHover('', false));
+  legend.addEventListener('mouseover', (e) => {
+    const i = e.target.closest('.donut-item[data-cat]');
+    if (i) setHover(i.dataset.cat, true);
+  });
+  legend.addEventListener('mouseout', () => setHover('', false));
+}
+
+// 表单类别快捷选择 chips（默认 6 类 + 已有自定义类别）
+function buildCatChips() {
+  const box = document.getElementById('catChips');
+  if (!box) return;
+  const cats = new Set(['视频', '音乐', '工具', '学习', '生活', '其他']);
+  subs.forEach((s) => { if (s.category) cats.add(s.category); });
+  box.innerHTML = Array.from(cats).map((c) =>
+    '<button type="button" data-cat="' + esc(c) + '">' + esc(c) + '</button>'
+  ).join('');
 }
 
 // 每日成本的「体感」类比，让大数字可感知
@@ -981,8 +1107,8 @@ function render() {
           '<div class="monthly">' + fmtMoney(c.monthly) + '/月</div>' +
         '</div>' +
         '<div class="ops">' +
-          '<button data-action="edit" data-id="' + esc(sub.id) + '" title="编辑">✏️</button>' +
-          '<button data-action="del" data-id="' + esc(sub.id) + '" class="del" title="删除">🗑</button>' +
+          '<button data-action="edit" data-id="' + esc(sub.id) + '" title="编辑"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
+          '<button data-action="del" data-id="' + esc(sub.id) + '" class="del" title="删除"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>' +
         '</div>' +
       '</li>'
     );
@@ -999,9 +1125,15 @@ function render() {
     document.getElementById('dueText').textContent = '🔔 今天有 ' + due.length + ' 个订阅到期：' +
       due.map((s) => s.name).slice(0, 3).join('、') + (due.length > 3 ? ' 等' : '');
     banner.hidden = false;
+    document.getElementById('calDot').hidden = false; // 顶栏日历红点
   } else {
     banner.hidden = true;
+    document.getElementById('calDot').hidden = true;
   }
+
+  // ⑥ 类别占比环形图
+  renderDonut(byCategory);
+  bindDonutHover();
 }
 
 // ---- 增删改表单 ----
@@ -1024,6 +1156,7 @@ function openDialog(sub) {
   f('endField').hidden = (sub ? sub.period : 'yearly') !== 'custom';
   f('subDialog').showModal();
   updateLivePreview();
+  buildCatChips(); // 刷新类别快捷选择
   f('fName').focus();
 }
 
@@ -1198,6 +1331,14 @@ function init() {
   document.getElementById('subForm').addEventListener('submit', onSubmit);
   document.getElementById('btnCancel').addEventListener('click', () => {
     document.getElementById('subDialog').close();
+  });
+
+  // 表单类别 chips 点击 → 填入输入框
+  document.getElementById('catChips').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-cat]');
+    if (!btn) return;
+    document.getElementById('fCategory').value = btn.dataset.cat;
+    updateLivePreview();
   });
 
   // 周期切换 → 显示/隐藏「预计使用年数」
