@@ -60,17 +60,11 @@
   }
   /* 页面标题（苹果式居中大标题） */
   .hero { text-align: center; padding: 30px 0 26px; }
-  .hero-badge {
-    display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
-    color: var(--muted); background: var(--card); border: 1px solid rgba(30, 50, 90, .08);
-    padding: 4px 14px; border-radius: 999px; margin-bottom: 14px;
-    box-shadow: 0 1px 4px rgba(30, 50, 90, .05);
-    animation: appleIn .6s cubic-bezier(.2, .8, .2, 1) both;
-  }
   .logo-badge {
     width: 60px; height: 60px; border-radius: 15px; margin-bottom: 14px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, .1);
     animation: appleIn .6s cubic-bezier(.2, .8, .2, 1) both;
+    display: block; margin-left: auto; margin-right: auto;
   }
   .hero h2 { font-size: 40px; font-weight: 600; margin: 0 0 8px; display: flex; align-items: center; justify-content: center; gap: 14px; }
   /* 朝夕文字 logo：笔画创意 —— 字体保持黑色，图形元素叠在笔画上 */
@@ -438,7 +432,6 @@
 <main>
   <!-- 页面标题 -->
   <section class="hero">
-    <div class="hero-badge">Daily Cost · 自用</div>
     <img src="icon-192.png" alt="朝夕" class="logo-badge">
     <svg class="logo-svg" viewBox="0 -36 260 156" role="img" aria-label="朝夕">
       <text x="30" y="88" font-size="84" class="char-m">朝</text>

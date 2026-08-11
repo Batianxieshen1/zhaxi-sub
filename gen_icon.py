@@ -34,10 +34,10 @@ def alpha_from(d):
 
 def make_icon(size):
     px = bytearray()
-    cx_sun, cy_sun, r_sun = size * 0.5, size * 0.52, size * 0.19
+    cx_sun, cy_sun, r_sun = size * 0.5, size * 0.50, size * 0.18
     glow_w = size * 0.11
-    # 星光：三颗小白点
-    stars = [(0.22, 0.22), (0.74, 0.16), (0.62, 0.32)]
+    # 星光：三颗小白点（对称分布）
+    stars = [(0.22, 0.22), (0.78, 0.22), (0.5, 0.15)]
     for y in range(size):
         px.append(0)
         for x in range(size):
