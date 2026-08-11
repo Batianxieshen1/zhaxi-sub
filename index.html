@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="deploy-ver" content="6">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>朝夕 · 订阅每日成本</title>
+<title>Dawn Ledger · 朝夕订阅成本</title>
 <meta name="description" content="朝夕 · 把年费细算到每一天，提醒每个订阅的到期日">
 <meta property="og:title" content="朝夕 · 订阅每日成本">
 <meta property="og:description" content="把年费细算到每一天，提醒每个订阅的到期日">
@@ -52,6 +52,7 @@
     box-shadow: 0 8px 24px rgba(30, 50, 90, .08);
   }
   .topbar h1 { font-size: 15px; font-weight: 600; letter-spacing: .08em; white-space: nowrap; }
+  .topbar .en-sub { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: .04em; margin-left: 4px; }
   .topbar .actions { display: flex; gap: 6px; }
   .topbar button { padding: 6px 12px; }
   @media (max-width: 480px) {
@@ -435,7 +436,7 @@
 <body>
 
 <header class="topbar">
-  <h1>朝 夕</h1>
+  <h1>朝 夕 <span class="en-sub">Dawn Ledger</span></h1>
   <div class="actions">
     <button id="btnCal" title="提醒日历：查看订阅到期日"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="calDot" class="cal-dot" hidden></span></button>
     <button id="btnExport" title="导出数据备份">导出</button>
@@ -456,7 +457,7 @@
       <path class="sun-rays" fill="none" stroke="#FF8A3D" stroke-width="3" stroke-linecap="round"/>
       <path class="star-path" fill="#8B5CF6"/>
     </svg>
-    <p>Daily Cost · 年费细算到每一天</p>
+    <p>Dawn Ledger · 年费细算到每一天</p>
     <div class="clock" id="clock"></div>
   </section>
 
