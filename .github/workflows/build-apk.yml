@@ -22,8 +22,11 @@ jobs:
           export PATH="$PATH:$(npm config get prefix)/bin"
           export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           mkdir -p "$ANDROID_HOME/licenses"
-          printf '\n24333f8a63b6825ea9c5514f83c2829b004d1fee' > "$ANDROID_HOME/licenses/android-sdk-license"
+          printf '\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n84831b9409646a918e30573bab4c9c91346d8abd' > "$ANDROID_HOME/licenses/android-sdk-license"
+          printf '\n504667f4c0de7af1a06de9f4b1727b84351f2910' > "$ANDROID_HOME/licenses/android-sdk-preview-license"
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-34" "build-tools;34.0.0" "platform-tools" > /dev/null 2>&1 || true
+          echo "SDK 组件:"; ls "$ANDROID_HOME/platforms" 2>/dev/null; ls "$ANDROID_HOME/build-tools" 2>/dev/null
           yes "" | bubblewrap init \
             --manifest "https://batianxieshen1.github.io/zhaxi-sub/manifest.json" \
             --host "batianxieshen1.github.io" \
