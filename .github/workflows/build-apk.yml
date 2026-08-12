@@ -1,0 +1,39 @@
+name: Build APK
+
+# 触发：推送到 master 自动构建；也可在 Actions 页面手动运行
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 生成 TWA 配置
+        run: |
+          npx --yes @pwabuilder/cli init \
+            --url "https://batianxieshen1.github.io/zhaxi-sub/" \
+            --manifest "https://batianxieshen1.github.io/zhaxi-sub/manifest.json" \
+            --package "com.zhaxi.sub" \
+            --name "Dawn Ledger" \
+            --version "1.0.0" \
+            --host "batianxieshen1.github.io"
+
+      - name: 构建 APK
+        run: npx --yes @pwabuilder/cli build
+
+      - name: 上传 APK 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dawn-Ledger-apk
+          path: |
+            app-release-signed.apk
+            app-release-unsigned.apk
+          if-no-files-found: error
