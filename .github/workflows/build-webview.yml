@@ -1,0 +1,35 @@
+name: Build WebView APK
+
+on:
+  push:
+    branches: [master]
+    paths: ['webview-app/**']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: 接受 SDK 许可
+        run: |
+          mkdir -p "$ANDROID_HOME/licenses"
+          printf '\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n84831b9409646a918e30573bab4c9c91346d8abd' > "$ANDROID_HOME/licenses/android-sdk-license"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+
+      - name: 构建 debug APK
+        working-directory: webview-app
+        run: gradle assembleDebug --no-daemon
+
+      - name: 上传 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dawn-Ledger-WebView
+          path: webview-app/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
