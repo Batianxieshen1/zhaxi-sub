@@ -13,4 +13,5 @@ Thumbs.db
 jdk17/
 *.apk
 !dl/Dawn-Ledger.apk
+!dl/Dawn-Ledger-WebView.apk
 cleanup.py
