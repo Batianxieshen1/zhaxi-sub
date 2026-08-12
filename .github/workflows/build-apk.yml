@@ -18,7 +18,7 @@ jobs:
 
       - name: 安装 bubblewrap 并生成 TWA 配置
         run: |
-          npm i -g bubblewrap
+          npm i -g @bubblewrap/cli
           export PATH="$PATH:$(npm config get prefix)/bin"
           yes "" | bubblewrap init \
             --manifest "https://batianxieshen1.github.io/zhaxi-sub/manifest.json" \
