@@ -345,19 +345,31 @@
   .empty-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
   .empty-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
 
-  /* 通用确认弹窗 */
-  #confirmDialog { width: min(320px, 92vw); text-align: center; }
-  .confirm-body { padding: 28px 24px 24px; }
-  .confirm-icon { font-size: 40px; margin-bottom: 10px; }
-  #confirmMsg { font-size: 16px; font-weight: 600; color: var(--text); margin: 0 0 22px; }
+  /* 通用确认弹窗（苹果风） */
+  #confirmDialog { width: min(300px, 88vw); text-align: center; }
+  .confirm-body { padding: 26px 22px 20px; }
+  .confirm-icon {
+    width: 52px; height: 52px; border-radius: 15px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px; background: #ffe9e7;
+    transition: background .2s;
+  }
+  .confirm-icon svg { stroke: #ff3b30; transition: stroke .2s; }
+  .confirm-icon.tone-primary { background: #e8f1ff; }
+  .confirm-icon.tone-primary svg { stroke: var(--accent); }
+  #confirmMsg { font-size: 17px; font-weight: 700; color: var(--text); margin: 0 0 6px; }
+  .confirm-desc { font-size: 13px; color: var(--muted); margin: 0 0 20px; line-height: 1.55; }
   .confirm-actions { display: flex; gap: 10px; }
   .confirm-actions button {
-    flex: 1; border: none; border-radius: 980px; padding: 10px 0; font: inherit; font-size: 15px; cursor: pointer;
+    flex: 1; border: none; border-radius: 980px; padding: 11px 0; font: inherit; font-size: 15px; cursor: pointer;
+    transition: background .15s;
   }
   #confirmCancel { background: #f2f2f7; color: var(--text); }
   #confirmCancel:hover { background: #e8e8ed; }
   #confirmOk { background: #ff3b30; color: #fff; font-weight: 600; }
   #confirmOk:hover { background: #e6352b; }
+  #confirmOk.tone-primary { background: var(--accent); }
+  #confirmOk.tone-primary:hover { background: var(--accent-hover); }
 
   /* Toast */
   .toast-box {
@@ -721,11 +733,12 @@
 <!-- 通用确认弹窗（替换原生 confirm） -->
 <dialog id="confirmDialog">
   <div class="confirm-body">
-    <div class="confirm-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ff3b30" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div>
-    <h3 id="confirmMsg">确定删除？</h3>
+    <div class="confirm-icon" id="confirmIcon"><svg id="confirmIconSvg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div>
+    <h3 id="confirmMsg">确定？</h3>
+    <p id="confirmDesc" class="confirm-desc" hidden></p>
     <div class="confirm-actions">
       <button type="button" id="confirmCancel">取消</button>
-      <button type="button" id="confirmOk" class="danger">删除</button>
+      <button type="button" id="confirmOk">确定</button>
     </div>
   </div>
 </dialog>
@@ -915,12 +928,22 @@ function toast(msg, type) {
   }, 2400);
 }
 
-function askConfirm(msg, okText) {
+function askConfirm(msg, opts) {
+  if (typeof opts === 'string') opts = { okText: opts };
+  opts = opts || {};
   return new Promise((resolve) => {
     const dlg = document.getElementById('confirmDialog');
     document.getElementById('confirmMsg').textContent = msg;
     const okBtn = document.getElementById('confirmOk');
-    okBtn.textContent = okText || '删除';
+    okBtn.textContent = opts.okText || '确定';
+    okBtn.classList.toggle('tone-primary', opts.tone === 'primary');
+    document.getElementById('confirmIcon').classList.toggle('tone-primary', opts.tone === 'primary');
+    document.getElementById('confirmIconSvg').innerHTML = opts.tone === 'primary'
+      ? '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'
+      : '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>';
+    const desc = document.getElementById('confirmDesc');
+    desc.textContent = opts.desc || '';
+    desc.hidden = !opts.desc;
     const done = (v) => {
       dlg.close();
       dlg.removeEventListener('click', onBackdrop);
@@ -1672,20 +1695,25 @@ function onSubmit(e) {
 function init() {
   subs = loadSubs();
 
-  // 导出备份（JSON 信息包：版本 + 导出时间 + 订阅列表）
+  // 导出备份（JSON 信息包：版本 + 导出时间 + 订阅列表）—— 先确认防误触
   document.getElementById('btnExport').addEventListener('click', () => {
-    const payload = { version: 1, exportedAt: new Date().toISOString(), subscriptions: subs };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const d = new Date();
-    const localDate = d.getFullYear() + '-' +
-      String(d.getMonth() + 1).padStart(2, '0') + '-' +
-      String(d.getDate()).padStart(2, '0');
-    triggerDownload(blob, '订阅成本备份-' + localDate + '.json');
+    askConfirm('确定导出数据备份（JSON）？', { okText: '导出', tone: 'primary', desc: '文件将保存到下载目录，可用于恢复数据' }).then((ok) => {
+      if (!ok) return;
+      const payload = { version: 1, exportedAt: new Date().toISOString(), subscriptions: subs };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const d = new Date();
+      const localDate = d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
+      triggerDownload(blob, '订阅成本备份-' + localDate + '.json');
+    });
   });
 
-  // 导入备份（读取 JSON 文件并校验）
+  // 导入备份：先确认防误触 → 文件选择 → 覆盖前二次确认（预览条数）
   document.getElementById('btnImport').addEventListener('click', () => {
-    document.getElementById('importFile').click();
+    askConfirm('确定导入备份文件？', { okText: '选择文件', tone: 'primary', desc: '导入后将覆盖当前数据，选择文件后还会再次确认' }).then((ok) => {
+      if (ok) document.getElementById('importFile').click();
+    });
   });
   document.getElementById('importFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -1704,7 +1732,7 @@ function init() {
         return;
       }
       // 覆盖前确认（预览条数）
-      askConfirm('导入将覆盖当前 ' + subs.length + ' 条数据为文件中的 ' + arr.length + ' 条。此操作不可撤销，确定覆盖？', '覆盖导入')
+      askConfirm('导入将覆盖当前 ' + subs.length + ' 条数据为文件中的 ' + arr.length + ' 条。此操作不可撤销，确定覆盖？', { okText: '覆盖导入' })
         .then((ok) => {
           if (!ok) return;
           saveSubs(arr.map(normalizeSub));
@@ -1749,7 +1777,7 @@ function init() {
     const btn = e.target.closest('button[data-action]');
     if (btn && btn.dataset.action === 'edit') { openDialog(sub); return; }
     if (btn && btn.dataset.action === 'del') {
-      askConfirm('确定删除「' + sub.name + '」？').then((ok) => {
+      askConfirm('确定删除「' + sub.name + '」？', { okText: '删除' }).then((ok) => {
         if (!ok) return;
         const remove = () => {
           subs = subs.filter((s) => s.id !== id);
@@ -1818,11 +1846,19 @@ function init() {
     document.getElementById(id).addEventListener('change', updateLivePreview);
   });
 
-  // CSV 导出
-  document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
+  // CSV 导出（先确认防误触）
+  document.getElementById('btnExportCSV').addEventListener('click', () => {
+    askConfirm('确定导出 CSV 表格？', { okText: '导出', tone: 'primary', desc: 'Excel 可打开，文件将保存到下载目录' }).then((ok) => {
+      if (ok) exportCSV();
+    });
+  });
 
-  // ICS 续费日历导出（导入系统日历后由系统负责提醒）
-  document.getElementById('btnExportICS').addEventListener('click', exportICS);
+  // ICS 续费日历导出（先确认防误触；导入系统日历后由系统负责提醒）
+  document.getElementById('btnExportICS').addEventListener('click', () => {
+    askConfirm('确定导出续费日历（.ics）？', { okText: '导出', tone: 'primary', desc: '导入手机系统日历后，由系统负责到期提醒' }).then((ok) => {
+      if (ok) exportICS();
+    });
+  });
 
   // 跨标签页同步：另一个页面改了数据，这里自动刷新
   window.addEventListener('storage', (e) => {
