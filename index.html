@@ -868,6 +868,25 @@ function animateValue(el, to, dur) {
   }, 16);
 }
 
+// 触发下载：WebView（App）环境走原生桥保存到下载目录；浏览器正常 a.click 下载
+function triggerDownload(blob, filename, okMsg) {
+  if (window.nativeBridge && window.nativeBridge.saveFile) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const b64 = String(reader.result).split(',')[1] || '';
+      window.nativeBridge.saveFile(b64, filename, blob.type || 'application/octet-stream');
+      toast(okMsg || '已保存到手机下载目录');
+    };
+    reader.readAsDataURL(blob);
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 // CSV 导出（Excel 可打开）
 function exportCSV() {
   const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
@@ -878,13 +897,9 @@ function exportCSV() {
       c.daily.toFixed(3), c.monthly.toFixed(2), c.yearly.toFixed(2)]);
   }
   const blob = new Blob(['\ufeff' + rows.map((r) => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
   const d = new Date();
-  a.download = '朝夕-订阅数据-' + d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  triggerDownload(blob, '朝夕-订阅数据-' + d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '.csv');
 }
 
 // ICS 续费日历导出：为每个活跃订阅生成未来 2 年的续费事件（RRULE）
@@ -916,12 +931,8 @@ function exportICS() {
   }
   lines.push('END:VCALENDAR');
   const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '朝夕-续费日历.ics';
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast(count ? '已导出 ' + count + ' 个订阅的续费日历，导入系统日历即可获得提醒' : '没有可导出的续费事件', count ? '' : 'error');
+  triggerDownload(blob, '朝夕-续费日历.ics',
+    count ? '已导出 ' + count + ' 个订阅的续费日历，导入系统日历即可获得提醒' : '');
 }
 
 // 弹窗内实时预览：边填边算
@@ -1430,15 +1441,11 @@ function init() {
   document.getElementById('btnExport').addEventListener('click', () => {
     const payload = { version: 1, exportedAt: new Date().toISOString(), subscriptions: subs };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
     const d = new Date();
     const localDate = d.getFullYear() + '-' +
       String(d.getMonth() + 1).padStart(2, '0') + '-' +
       String(d.getDate()).padStart(2, '0');
-    a.download = '订阅成本备份-' + localDate + '.json';
-    a.click();
-    URL.revokeObjectURL(a.href);
+    triggerDownload(blob, '订阅成本备份-' + localDate + '.json');
   });
 
   // 导入备份（读取 JSON 文件并校验）
