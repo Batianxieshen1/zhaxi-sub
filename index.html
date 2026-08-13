@@ -276,6 +276,9 @@
     font-size: 13px; color: var(--accent); font-weight: 500;
     background: #eef6ff; border-radius: 10px; padding: 9px 12px; margin-bottom: 4px;
   }
+  .amount-row { display: flex; gap: 6px; }
+  .amount-row select { flex: 0 0 auto; width: auto; padding: 10px 8px; font-size: 14px; }
+  .amount-row input { flex: 1; }
 
   /* 空状态 */
   .empty { text-align: center; color: var(--muted); padding: 64px 0; }
@@ -436,9 +439,10 @@
 <header class="topbar">
   <h1>朝 夕 <span class="en-sub">Dawn Ledger</span></h1>
   <div class="actions">
-    <button id="btnCal" title="提醒日历：查看订阅到期日"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="calDot" class="cal-dot" hidden></span></button>
+    <button id="btnCal" title="续费日历：查看订阅到期日"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="calDot" class="cal-dot" hidden></span></button>
     <button id="btnExport" title="导出数据备份">导出</button>
     <button id="btnExportCSV" title="导出 CSV（Excel 可打开）">CSV</button>
+    <button id="btnExportICS" title="导出续费日历（导入系统日历后由系统提醒）">日历</button>
     <button id="btnImport" title="导入备份文件">导入</button>
     <input type="file" id="importFile" accept=".json,application/json" hidden>
   </div>
@@ -468,17 +472,17 @@
   <!-- 总览：双成本视角的核心 -->
   <section class="overview">
     <div class="card hl">
-      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>每天成本</div>
+      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>每天摊销</div>
       <div class="value" id="totalDaily"><span class="cur">¥</span><span class="num">0.00</span></div>
       <div class="hint" id="dailyHint">所有订阅平摊到每天</div>
     </div>
     <div class="card">
-      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每月成本</div>
+      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每月摊销</div>
       <div class="value" id="totalMonthly"><span class="cur">¥</span><span class="num">0.00</span></div>
       <div class="hint">所有订阅平摊到每月</div>
     </div>
     <div class="card">
-      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/></svg>每年成本</div>
+      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/></svg>每年摊销</div>
       <div class="value" id="totalYearly"><span class="cur">¥</span><span class="num">0.00</span></div>
       <div class="hint">按年汇总</div>
     </div>
@@ -547,14 +551,33 @@
         <select id="fPeriod">
           <option value="yearly">按年</option>
           <option value="monthly">按月</option>
+          <option value="weekly">按周</option>
+          <option value="quarterly">按季</option>
+          <option value="half_yearly">按半年</option>
+          <option value="every_n">每 N 个月</option>
           <option value="one_time">一次性买断</option>
           <option value="custom">自定义时间段</option>
         </select>
       </div>
       <div class="field">
-        <label for="fAmount">金额（¥）*</label>
-        <input id="fAmount" type="number" min="0" step="0.01" placeholder="199" required>
+        <label for="fAmount">金额 *</label>
+        <div class="amount-row">
+          <select id="fCurrency" title="币种">
+            <option value="CNY">¥</option>
+            <option value="USD">$</option>
+            <option value="EUR">€</option>
+            <option value="GBP">£</option>
+            <option value="JPY">¥</option>
+            <option value="HKD">HK$</option>
+            <option value="KRW">₩</option>
+          </select>
+          <input id="fAmount" type="number" min="0" step="0.01" placeholder="199" required>
+        </div>
       </div>
+    </div>
+    <div class="field" id="countField" hidden>
+      <label for="fCount">每隔几个月</label>
+      <input id="fCount" type="number" min="2" step="1" placeholder="如：3">
     </div>
     <div class="field" id="yearsField" hidden>
       <label for="fYears">预计使用年数 *</label>
@@ -580,7 +603,7 @@
         <input type="checkbox" id="fActive" class="switch">
         <span class="track"></span>
       </label>
-      <div class="switch-hint" id="activeHint">开关打开：正常计入总览、日历与提醒</div>
+      <div class="switch-hint" id="activeHint">开关打开：正常计入总览、日历与应用内到期提示</div>
     </div>
     <div class="live-preview" id="livePreview">≈ 每天 ¥0.00 · 每月 ¥0.00 · 每年 ¥0.00</div>
     <div class="form-actions">
@@ -642,7 +665,23 @@ function uid() {
     'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 }
 
-const PERIODS = ['yearly', 'monthly', 'one_time', 'custom'];
+const PERIODS = ['yearly', 'monthly', 'weekly', 'quarterly', 'half_yearly', 'every_n', 'one_time', 'custom'];
+const CURRENCIES = ['CNY', 'USD', 'EUR', 'GBP', 'JPY', 'HKD', 'KRW'];
+const CURRENCY_SYMBOLS = { CNY: '¥', USD: '$', EUR: '€', GBP: '£', JPY: '¥', HKD: 'HK$', KRW: '₩' };
+
+// 常规计费周期 → { unit, count }（一次性/自定义 → null）
+// 周/季/半年/每N月由 unit+count 表达：monthly={month,1}、quarterly={month,3}、every_n={month,N}
+function unitInfo(sub) {
+  switch (sub.period) {
+    case 'yearly': return { unit: 'year', count: 1 };
+    case 'monthly': return { unit: 'month', count: 1 };
+    case 'weekly': return { unit: 'week', count: 1 };
+    case 'quarterly': return { unit: 'month', count: 3 };
+    case 'half_yearly': return { unit: 'month', count: 6 };
+    case 'every_n': return { unit: 'month', count: Math.max(1, Math.round(Number(sub.count) || 1)) };
+    default: return null;
+  }
+}
 
 // 导入/存储时规范化每条记录：修复脏数据（非法周期、金额、缺 id 等）
 function normalizeSub(s, idx) {
@@ -657,6 +696,8 @@ function normalizeSub(s, idx) {
     start: s && typeof s.start === 'string' ? s.start : '',
     end: s && typeof s.end === 'string' ? s.end : '',
     note: s && s.note ? String(s.note) : '',
+    currency: s && CURRENCIES.includes(s.currency) ? s.currency : 'CNY',
+    count: s && s.period === 'every_n' ? Math.max(1, Math.round(Number(s.count) || 1)) : null,
     active: !(s && s.active === false),
   };
 }
@@ -670,8 +711,8 @@ function loadSubs() {
       return Array.isArray(arr) ? arr : [];
     }
   } catch (e) { /* 数据损坏则重置 */ }
-  saveSubs(DEFAULT_DATA);
-  return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  saveSubs(DEFAULT_DATA.map(normalizeSub));
+  return JSON.parse(JSON.stringify(DEFAULT_DATA.map(normalizeSub)));
 }
 
 function saveSubs(list) {
@@ -691,23 +732,23 @@ function dateDays(start, end) {
 }
 
 // 单项订阅 → 年/月/日成本（元）
-// 按年：年成本 = 金额；按月：年成本 = 金额×12；一次性：年成本 = 金额 ÷ 使用年数
-// 自定义时间段：年成本 = 金额 ÷ 实际天数 × 365（每天成本 = 金额 ÷ 实际天数）
+// 常规周期：年成本 = 金额 ÷ 周期天数 × 365（月付 ×12、周付 ×52.14、季付 ×4…）
+// 一次性：年成本 = 金额 ÷ 使用年数；自定义时间段：年成本 = 金额 ÷ 实际天数 × 365
 function calcCosts(sub) {
   const amount = Number(sub.amount) || 0;
   let yearly = 0;
-  switch (sub.period) {
-    case 'yearly': yearly = amount; break;
-    case 'monthly': yearly = amount * MONTHS_PER_YEAR; break;
-    case 'one_time': {
-      const years = Number(sub.years) || 0;
-      yearly = years > 0 ? amount / years : 0;
-      break;
-    }
-    case 'custom': {
-      const days = dateDays(sub.start, sub.end);
-      yearly = days > 0 ? (amount / days) * DAYS_PER_YEAR : 0;
-      break;
+  if (sub.period === 'one_time') {
+    const years = Number(sub.years) || 0;
+    yearly = years > 0 ? amount / years : 0;
+  } else if (sub.period === 'custom') {
+    const days = dateDays(sub.start, sub.end);
+    yearly = days > 0 ? (amount / days) * DAYS_PER_YEAR : 0;
+  } else {
+    const info = unitInfo(sub);
+    if (info) {
+      const unitDays = { day: 1, week: 7, month: DAYS_PER_YEAR / MONTHS_PER_YEAR, year: DAYS_PER_YEAR };
+      const cycleDays = info.count * (unitDays[info.unit] || DAYS_PER_YEAR);
+      yearly = cycleDays > 0 ? (amount / cycleDays) * DAYS_PER_YEAR : 0;
     }
   }
   return {
@@ -737,10 +778,26 @@ function summarize(list) {
   return { total, byCategory };
 }
 
-// 金额格式化：保留两位小数；不足 ¥0.01 时显示 3 位，避免「¥0.00/天」误导
-function fmtMoney(n) {
-  if (n > 0 && n < 0.01) return '¥' + (Math.round(n * 1000) / 1000).toFixed(3);
-  return '¥' + (Math.round(n * 100) / 100).toFixed(2);
+// 金额格式化：保留两位小数；不足 ¥0.01 时显示 3 位；支持币种符号
+function fmtMoney(n, currency) {
+  const sym = CURRENCY_SYMBOLS[currency] || CURRENCY_SYMBOLS.CNY;
+  if (n > 0 && n < 0.01) return sym + (Math.round(n * 1000) / 1000).toFixed(3);
+  return sym + (Math.round(n * 100) / 100).toFixed(2);
+}
+
+// 混币种汇总时：取数据中出现最多的币种作为显示符号
+function majorityCurrency(list) {
+  const freq = {};
+  for (const s of list) {
+    if (s.active === false) continue;
+    const c = s.currency || 'CNY';
+    freq[c] = (freq[c] || 0) + 1;
+  }
+  let best = 'CNY', max = -1;
+  for (const c in freq) {
+    if (freq[c] > max) { max = freq[c]; best = c; }
+  }
+  return best;
 }
 
 // ==================== 渲染层 ====================
@@ -758,10 +815,12 @@ function toast(msg, type) {
   }, 2400);
 }
 
-function askConfirm(msg) {
+function askConfirm(msg, okText) {
   return new Promise((resolve) => {
     const dlg = document.getElementById('confirmDialog');
     document.getElementById('confirmMsg').textContent = msg;
+    const okBtn = document.getElementById('confirmOk');
+    okBtn.textContent = okText || '删除';
     const done = (v) => {
       dlg.close();
       dlg.removeEventListener('click', onBackdrop);
@@ -812,10 +871,10 @@ function animateValue(el, to, dur) {
 // CSV 导出（Excel 可打开）
 function exportCSV() {
   const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rows = [['名称', '类别', '周期', '金额', '使用年数', '开始', '结束', '备注', '每天成本', '每月成本', '每年成本']];
+  const rows = [['名称', '类别', '周期', '金额', '币种', '使用年数', '开始', '结束', '备注', '每天成本', '每月成本', '每年成本']];
   for (const s of subs) {
     const c = calcCosts(s);
-    rows.push([s.name, s.category, s.period, s.amount, s.years || '', s.start || '', s.end || '', s.note || '',
+    rows.push([s.name, s.category, s.period, s.amount, s.currency || 'CNY', s.years || '', s.start || '', s.end || '', s.note || '',
       c.daily.toFixed(3), c.monthly.toFixed(2), c.yearly.toFixed(2)]);
   }
   const blob = new Blob(['\ufeff' + rows.map((r) => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
@@ -828,12 +887,50 @@ function exportCSV() {
   URL.revokeObjectURL(a.href);
 }
 
+// ICS 续费日历导出：为每个活跃订阅生成未来 2 年的续费事件（RRULE）
+// 导入系统日历后，由系统日历负责 30/7/1 天前提醒 —— 比网页推送可靠，无需后端
+function exportICS() {
+  const icsEsc = (s) => String(s ?? '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  const fmtDate = (d) => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+  const freqMap = { day: 'DAILY', week: 'WEEKLY', month: 'MONTHLY', year: 'YEARLY' };
+  const now = new Date();
+  const until = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Dawn Ledger//订阅续费日历//CN', 'CALSCALE:GREGORIAN'];
+  let count = 0;
+  for (const s of subs) {
+    if (s.active === false) continue;
+    const info = unitInfo(s);
+    if (!info || !s.start) continue;
+    const next = nextRenewalDate(s);
+    if (!next) continue;
+    const freq = freqMap[info.unit];
+    if (!freq) continue;
+    lines.push('BEGIN:VEVENT');
+    lines.push('UID:' + s.id + '@dawn-ledger');
+    lines.push('DTSTAMP:' + fmtDate(now) + 'T000000Z');
+    lines.push('DTSTART;VALUE=DATE:' + fmtDate(next));
+    lines.push('RRULE:FREQ=' + freq + ';INTERVAL=' + info.count + ';UNTIL=' + fmtDate(until));
+    lines.push('SUMMARY:' + icsEsc(s.name + ' · 续费 ' + fmtMoney(s.amount, s.currency)));
+    lines.push('END:VEVENT');
+    count++;
+  }
+  lines.push('END:VCALENDAR');
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '朝夕-续费日历.ics';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(count ? '已导出 ' + count + ' 个订阅的续费日历，导入系统日历即可获得提醒' : '没有可导出的续费事件', count ? '' : 'error');
+}
+
 // 弹窗内实时预览：边填边算
 function updateLivePreview() {
   const el = document.getElementById('livePreview');
   if (!el) return;
-  const c = calcCosts(collectForm());
-  el.textContent = '≈ 每天 ' + fmtMoney(c.daily) + ' · 每月 ' + fmtMoney(c.monthly) + ' · 每年 ' + fmtMoney(c.yearly);
+  const form = collectForm();
+  const c = calcCosts(form);
+  el.textContent = '≈ 每天 ' + fmtMoney(c.daily, form.currency) + ' · 每月 ' + fmtMoney(c.monthly, form.currency) + ' · 每年 ' + fmtMoney(c.yearly, form.currency);
 }
 
 // 「计入统计」开关：状态文字 + 后果提示 + 预览联动
@@ -845,8 +942,8 @@ function updateActiveUI() {
   label.textContent = on ? '计入统计' : '已取消 · 不统计';
   label.classList.toggle('off', !on);
   hint.textContent = on
-    ? '开关打开：正常计入总览、日历与提醒'
-    : '关闭后：不计入总览、日历与提醒，列表置灰';
+    ? '开关打开：正常计入总览、日历与应用内到期提示'
+    : '关闭后：不计入总览、日历与应用内到期提示，列表置灰';
   hint.classList.toggle('off', !on);
   if (preview) preview.style.opacity = on ? '1' : '.45';
   updateLivePreview();
@@ -905,23 +1002,29 @@ let calCursor = null;   // 当前显示的月份（Date）
 let calSelected = null; // 选中的日期 { y, m, d }
 
 // 某月有续费事件的日期 → { day: [订阅...] }
-// 月付：每月同日续费；年付：仅开始日期所在月份续费；一次性/自定义时间段无续费日
+// 只标记开始日期之后（含开始日）的续费日；开始前的月份不再误标；一次性/自定义无续费日
 function calEventsForMonth(y, m) {
   const map = {};
-  const lastDay = new Date(y, m + 1, 0).getDate();
+  const lastDay = daysInMonth(y, m);
+  const monthEnd = new Date(y, m, lastDay);
   for (const s of subs) {
-    if (s.active === false) continue; // 已取消的不提醒
-    if (!s.start || s.period === 'one_time' || s.period === 'custom') continue;
-    const d = new Date(s.start + 'T00:00:00');
-    if (isNaN(d)) continue;
-    let eventDay = null;
-    if (s.period === 'monthly') {
-      eventDay = Math.min(d.getDate(), lastDay);
-    } else if (s.period === 'yearly' && d.getMonth() === m) {
-      eventDay = Math.min(d.getDate(), lastDay);
-    }
-    if (eventDay !== null) {
-      (map[eventDay] = map[eventDay] || []).push(s);
+    if (s.active === false) continue; // 已取消的不提示
+    if (!s.start) continue;
+    const info = unitInfo(s);
+    if (!info) continue;
+    const start = new Date(s.start + 'T00:00:00');
+    if (isNaN(start)) continue;
+    if (start > monthEnd) continue; // 开始日期晚于本月 → 无事件
+    let k = 0, guard = 0;
+    while (guard++ < 500) {
+      const d = kthRenewalDate(s, k);
+      if (!d) break;
+      const dy = d.getFullYear(), dm = d.getMonth();
+      if (dy > y || (dy === y && dm > m)) break;
+      if (dy === y && dm === m) {
+        (map[d.getDate()] = map[d.getDate()] || []).push(s);
+      }
+      k++;
     }
   }
   return map;
@@ -952,13 +1055,13 @@ function renderCal() {
   for (const day in events) {
     for (const s of events[day]) monthTotal += Number(s.amount) || 0;
   }
-  document.getElementById('calTotal').textContent = '本月预计支出：' + fmtMoney(monthTotal);
+  document.getElementById('calTotal').textContent = '本月预计扣款：' + fmtMoney(monthTotal, majorityCurrency(subs));
 
   // 选中日期的到期订阅列表
   const selEvents = calSelected ? events[calSelected.d] : null;
   document.getElementById('calEvents').innerHTML = selEvents && selEvents.length
     ? selEvents.map((s) =>
-        '<div class="cal-ev"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;color:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' + esc(s.name) + '</span><b>' + fmtMoney(s.amount) + '</b><em>' + periodText(s) + '</em></div>'
+        '<div class="cal-ev"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;color:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' + esc(s.name) + '</span><b>' + fmtMoney(s.amount, s.currency) + '</b><em>' + periodText(s) + '</em></div>'
       ).join('')
     : '<div class="cal-none">' + (calSelected ? '这天没有订阅到期' : '点击日期，查看当天到期的订阅') + '</div>';
 }
@@ -1005,10 +1108,14 @@ function esc(s) {
 
 // 计费周期描述：如「¥15/月」「¥68/年」「¥698 买断 / 3 年」
 function periodText(sub) {
-  const amt = fmtMoney(sub.amount);
+  const amt = fmtMoney(sub.amount, sub.currency);
   switch (sub.period) {
     case 'yearly': return amt + '/年';
     case 'monthly': return amt + '/月';
+    case 'weekly': return amt + '/周';
+    case 'quarterly': return amt + '/季';
+    case 'half_yearly': return amt + '/半年';
+    case 'every_n': return amt + ' / 每' + (Math.max(1, Math.round(Number(sub.count) || 1))) + '个月';
     case 'one_time':
       return amt + ' 买断' + (sub.years ? ' / ' + sub.years + ' 年' : '');
     case 'custom': {
@@ -1025,34 +1132,48 @@ function daysInMonth(y, m) {
   return new Date(y, m + 1, 0).getDate();
 }
 
-// 下次续费日期（now 可注入，便于测试）；月付=每月同日，年付=每年同日，不存在的日期取月末
+// 下次续费日期（now 可注入，便于测试）
+// 从开始日按周期推进（月/年用日历推进 + 月末 clamp，周/日按天数推进），取 >= 今天的最小续费日
 function nextRenewalDate(sub, now) {
   if (!sub.start) return null;
-  const s = new Date(sub.start + 'T00:00:00');
-  if (isNaN(s)) return null;
+  if (!unitInfo(sub)) return null;
   const t = now ? new Date(now) : new Date();
   const today = new Date(t.getFullYear(), t.getMonth(), t.getDate());
-  if (sub.period === 'monthly') {
-    const day = Math.min(s.getDate(), daysInMonth(today.getFullYear(), today.getMonth()));
-    let d = new Date(today.getFullYear(), today.getMonth(), day);
-    if (d < today) {
-      d = new Date(today.getFullYear(), today.getMonth() + 1,
-        Math.min(s.getDate(), daysInMonth(today.getFullYear(), today.getMonth() + 1)));
-    }
-    return d;
+  let k = 0, guard = 0;
+  while (guard++ < 20000) {
+    const d = kthRenewalDate(sub, k);
+    if (!d) return null;
+    if (d >= today) return d;
+    k++;
   }
-  const day = Math.min(s.getDate(), daysInMonth(today.getFullYear(), s.getMonth()));
-  let d = new Date(today.getFullYear(), s.getMonth(), day);
-  if (d < today) {
-    d = new Date(today.getFullYear() + 1, s.getMonth(),
-      Math.min(s.getDate(), daysInMonth(today.getFullYear() + 1, s.getMonth())));
+  return null;
+}
+
+// 从开始日起第 k 个周期的续费日（k=0 即开始日）；月/年按日历推进（月末 clamp），周按 7×count 天推进
+function kthRenewalDate(sub, k) {
+  const s = new Date(sub.start + 'T00:00:00');
+  if (isNaN(s)) return null;
+  const info = unitInfo(sub);
+  if (!info) return k === 0 ? new Date(s) : null;
+  if (k === 0) return new Date(s);
+  const { unit, count } = info;
+  if (unit === 'month') {
+    const total = s.getMonth() + k * count;
+    const y = s.getFullYear() + Math.floor(total / 12);
+    const m = total % 12;
+    return new Date(y, m, Math.min(s.getDate(), daysInMonth(y, m)));
   }
-  return d;
+  if (unit === 'year') {
+    const y = s.getFullYear() + k * count;
+    return new Date(y, s.getMonth(), Math.min(s.getDate(), daysInMonth(y, s.getMonth())));
+  }
+  const ms = (unit === 'week' ? 7 : 1) * count * 86400000;
+  return new Date(s.getTime() + k * ms);
 }
 
 // 续费日提示（仅展示，不通知）：如「下次续费：2026年9月6日」
 function renewalText(sub) {
-  if (!sub.start || sub.period === 'one_time' || sub.period === 'custom') return '';
+  if (!sub.start || !unitInfo(sub)) return '';
   const d = nextRenewalDate(sub);
   if (!d) return '';
   const today = new Date();
@@ -1095,12 +1216,12 @@ function renderDonut(byCategory) {
       ' data-cat="' + esc(name) + '"/>';
     legend += '<div class="donut-item" data-cat="' + esc(name) + '">' +
       '<span class="donut-dot" style="background:' + color + '"></span>' + esc(name) +
-      '<b>' + Math.round(frac * 100) + '%</b><span class="donut-amt">' + fmtMoney(c.monthly) + '/月</span></div>';
+      '<b>' + Math.round(frac * 100) + '%</b><span class="donut-amt">' + fmtMoney(c.monthly, majorityCurrency(subs)) + '/月</span></div>';
     acc += frac;
   });
   document.getElementById('donutSegs').innerHTML = segs;
   document.getElementById('donutLegend').innerHTML = legend;
-  document.getElementById('donutTotal').textContent = fmtMoney(total);
+  document.getElementById('donutTotal').textContent = fmtMoney(total, majorityCurrency(subs));
   // 下一帧触发「环形图展开」动画（从 0 增长到目标弧长）
   requestAnimationFrame(() => requestAnimationFrame(() => {
     document.getElementById('donutSegs').querySelectorAll('circle').forEach((c) => {
@@ -1158,10 +1279,13 @@ function render() {
   subs = loadSubs(); // 同步全局数据源：本地/跨标签页改动都从这里刷新
   const { total, byCategory } = summarize(subs);
 
-  // ① 总览三卡片（每天 / 每月 / 每年）
+  // ① 总览三卡片（每天 / 每月 / 每年摊销）
   animateValue(document.getElementById('totalDaily'), total.daily);
   animateValue(document.getElementById('totalMonthly'), total.monthly);
   animateValue(document.getElementById('totalYearly'), total.yearly);
+  // 币种符号随数据动态变化（混币种取最多的币种）
+  const curSym = CURRENCY_SYMBOLS[majorityCurrency(subs)] || '¥';
+  document.querySelectorAll('.overview .cur').forEach((el) => { el.textContent = curSym; });
   document.getElementById('dailyHint').textContent = subs.length
     ? '共 ' + subs.length + ' 笔订阅' + (total.daily > 0 ? ' · ' + dailyAnalogy(total.daily) : '')
     : '所有订阅平摊到每天';
@@ -1170,7 +1294,7 @@ function render() {
   const cats = Object.entries(byCategory).sort((a, b) => b[1].monthly - a[1].monthly);
   document.getElementById('byCategory').innerHTML = cats.map(([name, c]) =>
     '<span class="chip">' + catIcon(name) + ' ' + esc(name) + ' <b>' +
-    fmtMoney(c.monthly) + '/月</b> · ' + fmtMoney(c.daily) + '/天 ×' + c.count + '</span>'
+    fmtMoney(c.monthly, majorityCurrency(subs)) + '/月</b> · ' + fmtMoney(c.daily, majorityCurrency(subs)) + '/天 ×' + c.count + '</span>'
   ).join('');
 
   // ③ 订阅列表
@@ -1188,8 +1312,8 @@ function render() {
           '<div class="meta">' + esc(meta) + '</div>' +
         '</div>' +
         '<div class="cost">' +
-          '<div class="daily">' + fmtMoney(c.daily) + '/天</div>' +
-          '<div class="monthly">' + fmtMoney(c.monthly) + '/月</div>' +
+          '<div class="daily">' + fmtMoney(c.daily, sub.currency) + '/天</div>' +
+          '<div class="monthly">' + fmtMoney(c.monthly, sub.currency) + '/月</div>' +
         '</div>' +
         '<div class="ops">' +
           '<button data-action="edit" data-id="' + esc(sub.id) + '" title="编辑"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
@@ -1233,6 +1357,8 @@ function openDialog(sub) {
   f('fCategory').value = sub ? sub.category || '' : '';
   f('fPeriod').value = sub ? sub.period : 'yearly';
   f('fAmount').value = sub ? sub.amount : '';
+  f('fCurrency').value = sub && sub.currency ? sub.currency : 'CNY';
+  f('fCount').value = sub && sub.count ? sub.count : '';
   f('fYears').value = sub && sub.years ? sub.years : '';
   f('fStart').value = sub ? sub.start || '' : '';
   f('fEnd').value = sub ? sub.end || '' : '';
@@ -1241,6 +1367,7 @@ function openDialog(sub) {
   updateActiveUI();
   f('yearsField').hidden = (sub ? sub.period : 'yearly') !== 'one_time';
   f('endField').hidden = (sub ? sub.period : 'yearly') !== 'custom';
+  f('countField').hidden = (sub ? sub.period : 'yearly') !== 'every_n';
   f('subDialog').showModal();
   updateLivePreview();
   buildCatChips(); // 刷新类别快捷选择
@@ -1260,6 +1387,8 @@ function collectForm() {
     start: f('fStart').value,
     end: f('fEnd').value,
     note: f('fNote').value.trim(),
+    currency: CURRENCIES.includes(f('fCurrency').value) ? f('fCurrency').value : 'CNY',
+    count: period === 'every_n' ? Math.max(1, Math.round(Number(f('fCount').value) || 1)) : null,
     active: !f('fActive').checked,
   };
 }
@@ -1297,9 +1426,10 @@ function onSubmit(e) {
 function init() {
   subs = loadSubs();
 
-  // 导出备份（JSON 文件下载）
+  // 导出备份（JSON 信息包：版本 + 导出时间 + 订阅列表）
   document.getElementById('btnExport').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(subs, null, 2)], { type: 'application/json' });
+    const payload = { version: 1, exportedAt: new Date().toISOString(), subscriptions: subs };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     const d = new Date();
@@ -1320,15 +1450,25 @@ function init() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
+      let arr = null;
       try {
-        const arr = JSON.parse(reader.result);
-        if (!Array.isArray(arr)) throw new Error('bad format');
-        saveSubs(arr.map(normalizeSub));
-        render();
-        toast('导入成功，共 ' + arr.length + ' 条');
+        const data = JSON.parse(reader.result);
+        if (Array.isArray(data)) arr = data; // 旧版裸数组
+        else if (data && Array.isArray(data.subscriptions)) arr = data.subscriptions; // 新版信息包
+        if (!arr) throw new Error('bad format');
       } catch (err) {
         toast('导入失败：文件不是有效的备份数据', 'error');
+        e.target.value = '';
+        return;
       }
+      // 覆盖前确认（预览条数）
+      askConfirm('导入将覆盖当前 ' + subs.length + ' 条数据为文件中的 ' + arr.length + ' 条。此操作不可撤销，确定覆盖？', '覆盖导入')
+        .then((ok) => {
+          if (!ok) return;
+          saveSubs(arr.map(normalizeSub));
+          render();
+          toast('导入成功，共 ' + arr.length + ' 条');
+        });
       e.target.value = '';
     };
     reader.readAsText(file);
@@ -1387,6 +1527,9 @@ function init() {
   // CSV 导出
   document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
 
+  // ICS 续费日历导出（导入系统日历后由系统负责提醒）
+  document.getElementById('btnExportICS').addEventListener('click', exportICS);
+
   // 跨标签页同步：另一个页面改了数据，这里自动刷新
   window.addEventListener('storage', (e) => {
     if (e.key === STORAGE_KEY) render();
@@ -1414,6 +1557,15 @@ function init() {
     calSelected = { y: calCursor.getFullYear(), m: calCursor.getMonth(), d: +d.dataset.d };
     renderCal();
   });
+  // 日历键盘操作：Enter/Space 选中日期（与点击一致，补全可访问性）
+  document.getElementById('calGrid').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const d = e.target.closest('.cal-day[data-d]');
+    if (!d) return;
+    e.preventDefault();
+    calSelected = { y: calCursor.getFullYear(), m: calCursor.getMonth(), d: +d.dataset.d };
+    renderCal();
+  });
 
   // 实时时钟：每秒刷新（保证分钟切换及时）
   tickClock();
@@ -1436,11 +1588,12 @@ function init() {
   // 「计入统计」开关：状态联动
   document.getElementById('fActive').addEventListener('change', updateActiveUI);
 
-  // 周期切换 → 显示/隐藏「预计使用年数」
+  // 周期切换 → 显示/隐藏「预计使用年数」等专属输入
   document.getElementById('fPeriod').addEventListener('change', (e) => {
     const p = e.target.value;
     document.getElementById('yearsField').hidden = p !== 'one_time';
     document.getElementById('endField').hidden = p !== 'custom';
+    document.getElementById('countField').hidden = p !== 'every_n';
   });
 
   // PWA：注册 Service Worker（离线可用；仅 HTTPS/localhost 生效，file:// 下自动跳过）

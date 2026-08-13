@@ -27,10 +27,10 @@ const ctx = {
 vm.createContext(ctx);
 // 追加一行导出：const 声明的词法绑定不会自动挂到 context 上，需在沙箱内显式导出
 vm.runInContext(
-  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, dailyAnalogy, normalizeSub, calEventsForMonth, __setSubs: (l) => { subs = l; }, DEFAULT_DATA };',
+  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, majorityCurrency, __setSubs: (l) => { subs = l; }, DEFAULT_DATA };',
   ctx
 );
-const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, dailyAnalogy, normalizeSub, calEventsForMonth, __setSubs, DEFAULT_DATA } = ctx.__exports;
+const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, majorityCurrency, __setSubs, DEFAULT_DATA } = ctx.__exports;
 
 function approx(actual, expected, eps = 1e-9) {
   assert.ok(Math.abs(actual - expected) < eps,
@@ -173,7 +173,7 @@ ev = calEventsForMonth(2026, 2); // 3 月
 assert.ok(ev[1] && ev[1].length === 1 && ev[1][0].id === 'y1', '3 月 1 日只有年付B');
 ev = calEventsForMonth(2026, 1); // 2 月
 assert.ok(ev[28] && ev[28].some((s) => s.id === 'm2'), '31 号月付在 2 月落到 28 日');
-assert.ok(ev[6] && ev[6].some((s) => s.id === 'm1'), '2 月 6 日月付A 仍续费');
+assert.ok(!ev[6] || !ev[6].some((s) => s.id === 'm1'), '8 月才开始的月付A 在 2 月不应有事件（修复后）');
 
 console.log('▶ 取消订阅：统计与提醒排除');
 __setSubs([
@@ -198,5 +198,67 @@ const sorted = sortSubs([
 assert.equal(sorted[0].id, 'n'); // 已取消的排最后
 assert.equal(normalizeSub({ name: 'x', amount: 1 }).active, true);          // 默认未取消
 assert.equal(normalizeSub({ name: 'x', amount: 1, active: false }).active, false);
+
+console.log('▶ 日历回归：开始日期之前的月份不得出现续费事件');
+__setSubs([
+  { id: 'r1', name: '月付R', period: 'monthly', amount: 15, start: '2026-08-06' },
+  { id: 'r2', name: '年付R', period: 'yearly', amount: 68, start: '2026-08-06' },
+]);
+ev = calEventsForMonth(2026, 1); // 2026 年 2 月（早于开始月 8 月）
+assert.equal(Object.keys(ev).length, 0, '开始前的月份不应有任何续费事件');
+ev = calEventsForMonth(2025, 7); // 2025 年 8 月（年付的开始月但是往年）
+assert.equal(Object.keys(ev).length, 0, '年付在往年同月也不应出现事件');
+ev = calEventsForMonth(2026, 7); // 开始月当月
+assert.ok(ev[6] && ev[6].length === 2, '开始月当月应有事件（首次扣费）');
+ev = calEventsForMonth(2027, 7); // 次年 8 月
+assert.ok(ev[6] && ev[6].some((s) => s.id === 'r1'), '开始后月份月付继续续费');
+assert.ok(ev[6] && ev[6].some((s) => s.id === 'r2'), '年付次年同月续费');
+
+console.log('▶ 新周期折算：周/季/半年/每N月');
+c = calcCosts({ period: 'weekly', amount: 10 });
+approx(c.yearly, 10 * 365 / 7, 1e-9);
+c = calcCosts({ period: 'quarterly', amount: 60 });
+approx(c.yearly, 240); approx(c.monthly, 20);
+c = calcCosts({ period: 'half_yearly', amount: 120 });
+approx(c.yearly, 240);
+c = calcCosts({ period: 'every_n', amount: 30, count: 2 });
+approx(c.yearly, 180); // 每 2 个月付 30 → 每年 6 次
+assert.equal(unitInfo({ period: 'every_n', count: 2 }).count, 2);
+assert.equal(unitInfo({ period: 'one_time' }), null);
+
+console.log('▶ 新周期续费日');
+// 季付：1/31 开始 → 4/30、7/31、10/31（月末 clamp 后恢复锚定日）
+assert.equal(fmtDate(kthRenewalDate({ period: 'quarterly', start: '2026-01-31' }, 1)), '4月30日');
+assert.equal(fmtDate(kthRenewalDate({ period: 'quarterly', start: '2026-01-31' }, 2)), '7月31日');
+// 周付：每 7 天
+assert.equal(fmtDate(kthRenewalDate({ period: 'weekly', start: '2026-08-06' }, 1)), '8月13日');
+// 每 2 个月：8/6 → 10/6
+assert.equal(fmtDate(kthRenewalDate({ period: 'every_n', count: 2, start: '2026-08-06' }, 1)), '10月6日');
+assert.equal(fmtDate(nextRenewalDate({ period: 'quarterly', start: '2026-01-31' }, '2026-08-06')), '10月31日');
+assert.equal(fmtDate(nextRenewalDate({ period: 'weekly', start: '2026-08-06' }, '2026-08-10')), '8月13日');
+
+console.log('▶ 币种：字段规范化与格式化');
+assert.equal(normalizeSub({ name: 'x', currency: 'USD' }).currency, 'USD');
+assert.equal(normalizeSub({ name: 'x', currency: 'hack' }).currency, 'CNY');
+assert.equal(normalizeSub({ name: 'x' }).currency, 'CNY'); // 老数据默认人民币
+assert.equal(fmtMoney(15, 'USD'), '$15.00');
+assert.equal(fmtMoney(15, 'EUR'), '€15.00');
+assert.equal(fmtMoney(15), '¥15.00');
+assert.equal(fmtMoney(15, 'HKD'), 'HK$15.00');
+assert.equal(periodText({ period: 'monthly', amount: 15, currency: 'USD' }), '$15.00/月');
+assert.equal(periodText({ period: 'every_n', amount: 30, count: 2 }), '¥30.00 / 每2个月');
+// 混币种汇总符号：取最多的币种
+assert.equal(majorityCurrency([
+  { currency: 'USD' }, { currency: 'USD' }, { currency: 'CNY' },
+]), 'USD');
+
+console.log('▶ 新周期日历事件分布');
+__setSubs([
+  { id: 'q1', name: '季付Q', period: 'quarterly', amount: 60, start: '2026-08-06' },
+]);
+ev = calEventsForMonth(2026, 10); // 2026 年 11 月：8/6 起每 3 月 → 11/6
+assert.ok(ev[6] && ev[6].length === 1 && ev[6][0].id === 'q1', '季付在 11/6 有事件');
+ev = calEventsForMonth(2026, 8); // 2026 年 9 月：无事件
+assert.equal(Object.keys(ev).length, 0, '季付在 9 月无事件');
 
 console.log('✅ 全部断言通过（' + DEFAULT_DATA.length + ' 条示例数据）');
