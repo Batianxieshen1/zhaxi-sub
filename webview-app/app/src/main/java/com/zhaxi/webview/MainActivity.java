@@ -9,9 +9,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 public class MainActivity extends Activity {
 
     private WebView webView;
+    private SwipeRefreshLayout swipe;
     private static final String URL = "https://batianxieshen1.github.io/zhaxi-sub/";
 
     @Override
@@ -30,8 +33,21 @@ public class MainActivity extends Activity {
 
         webView.setBackgroundColor(Color.WHITE);
         webView.setWebViewClient(new WebViewClient());
-        webView.setWebChromeClient(new WebChromeClient());
-        setContentView(webView);
+
+        // 下拉刷新容器
+        swipe = new SwipeRefreshLayout(this);
+        swipe.addView(webView);
+        swipe.setColorSchemeColors(Color.parseColor("#007AFF"));
+        swipe.setOnRefreshListener(() -> webView.reload());
+
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                swipe.setRefreshing(newProgress < 100);
+            }
+        });
+
+        setContentView(swipe);
 
         hideSystemUi();
         webView.loadUrl(URL);
