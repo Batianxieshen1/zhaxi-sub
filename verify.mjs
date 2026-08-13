@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
-const html = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
+const html = readFileSync(new URL(process.argv[2] || './index.html', import.meta.url), 'utf8');
 const m = html.match(/<script>([\s\S]*?)<\/script>/);
 if (!m) { console.error('❌ 未找到 <script> 块'); process.exit(1); }
 
