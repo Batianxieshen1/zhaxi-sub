@@ -3,6 +3,7 @@ package com.zhaxi.webview;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -10,6 +11,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Base64;
 import android.view.View;
 import android.webkit.JavascriptInterface;
@@ -24,6 +26,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 
 public class MainActivity extends Activity {
 
@@ -154,27 +157,44 @@ public class MainActivity extends Activity {
         public void saveFile(String base64, String fileName, String mime) {
             try {
                 byte[] data = Base64.decode(base64, Base64.DEFAULT);
-                // 先写到缓存目录，再交给 DownloadManager 复制到公共下载目录
-                File tmp = new File(activity.getCacheDir(), fileName);
-                try (FileOutputStream fos = new FileOutputStream(tmp)) {
-                    fos.write(data);
-                }
-                DownloadManager dm = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
-                DownloadManager.Request req = new DownloadManager.Request(Uri.fromFile(tmp))
-                        .setMimeType(mime == null || mime.isEmpty() ? "application/octet-stream" : mime)
-                        .setTitle(fileName)
-                        .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                String safeName = fileName == null || fileName.isEmpty() ? "download.bin" : fileName;
+                String safeMime = mime == null || mime.isEmpty() ? "application/octet-stream" : mime;
                 if (Build.VERSION.SDK_INT >= 29) {
-                    req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+                    // Android 10+：直接写 MediaStore.Downloads，无需任何权限，MIUI 兼容性最好
+                    ContentValues values = new ContentValues();
+                    values.put(MediaStore.Downloads.DISPLAY_NAME, safeName);
+                    values.put(MediaStore.Downloads.MIME_TYPE, safeMime);
+                    values.put(MediaStore.Downloads.IS_PENDING, 1);
+                    Uri uri = activity.getContentResolver()
+                            .insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                    if (uri == null) throw new Exception("无法创建下载文件");
+                    try (OutputStream os = activity.getContentResolver().openOutputStream(uri)) {
+                        if (os == null) throw new Exception("无法打开输出流");
+                        os.write(data);
+                    }
+                    values.clear();
+                    values.put(MediaStore.Downloads.IS_PENDING, 0);
+                    activity.getContentResolver().update(uri, values, null, null);
                 } else {
-                    req.setDestinationInExternalFilesDir(activity, Environment.DIRECTORY_DOWNLOADS, fileName);
+                    // 旧安卓：DownloadManager 复制到公共下载目录
+                    File tmp = new File(activity.getCacheDir(), safeName);
+                    try (FileOutputStream fos = new FileOutputStream(tmp)) {
+                        fos.write(data);
+                    }
+                    DownloadManager dm = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
+                    DownloadManager.Request req = new DownloadManager.Request(Uri.fromFile(tmp))
+                            .setMimeType(safeMime)
+                            .setTitle(safeName)
+                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                    req.setDestinationInExternalFilesDir(activity, Environment.DIRECTORY_DOWNLOADS, safeName);
+                    dm.enqueue(req);
                 }
-                dm.enqueue(req);
                 activity.runOnUiThread(() -> Toast.makeText(activity,
-                        "已保存：下载目录/" + fileName, Toast.LENGTH_LONG).show());
+                        "已保存：下载目录/" + safeName, Toast.LENGTH_LONG).show());
             } catch (Exception e) {
+                final String msg = e.getMessage();
                 activity.runOnUiThread(() -> Toast.makeText(activity,
-                        "保存失败：" + e.getMessage(), Toast.LENGTH_LONG).show());
+                        "保存失败：" + msg, Toast.LENGTH_LONG).show());
             }
         }
     }
