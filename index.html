@@ -302,20 +302,18 @@
   }
   .sub-item.batch-selected { box-shadow: 0 0 0 2px rgba(0, 122, 255, .35), 0 1px 6px rgba(30, 50, 90, .05); }
 
-  /* 批量操作栏（底部悬浮） */
-  .batch-bar {
-    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
-    z-index: 90; display: flex; align-items: center; gap: 8px;
-    background: rgba(29, 29, 31, .88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-radius: 999px; padding: 8px 14px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  /* 批量操作栏（浅色工具条） */
+  .batch-toolbar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: var(--card); border-radius: 14px; padding: 8px 12px;
+    margin-bottom: 12px; font-size: 13px;
+    box-shadow: 0 1px 6px rgba(30, 50, 90, .05);
   }
-  .batch-bar span { color: #fff; font-size: 12px; white-space: nowrap; }
-  .batch-bar button { padding: 6px 12px; font-size: 12px; border-radius: 999px; }
-  .batch-bar button.plain { background: transparent; color: #fff; }
-  .batch-bar button.danger { background: #ff453a; }
-  .batch-bar button:not(.danger):not(.plain):not(.primary) { background: rgba(255, 255, 255, .18); color: #fff; }
-  .batch-bar button.primary { background: var(--accent); }
+  .batch-toolbar span { color: var(--muted); white-space: nowrap; }
+  .batch-toolbar .batch-spacer { flex: 1; }
+  .batch-toolbar button { padding: 6px 12px; font-size: 12px; border-radius: 999px; }
+  .batch-toolbar button.plain { background: var(--card); box-shadow: 0 1px 4px rgba(30, 50, 90, .08); }
+  .batch-toolbar button.primary { background: var(--accent); color: #fff; }
 
   /* 未来扣款清单 */
   .upcoming-total {
@@ -735,11 +733,12 @@
 <!-- Toast 提示容器 -->
 <div id="toastBox" class="toast-box"></div>
 
-<!-- 批量操作栏 -->
-<div id="batchBar" class="batch-bar" hidden>
+<!-- 批量操作栏（浅色工具条，与页面风格统一） -->
+<div id="batchBar" class="batch-toolbar" hidden>
   <button type="button" id="batchAll" class="plain">全选</button>
   <span id="batchCount">已选 0 项</span>
-  <button type="button" id="batchDisable" class="danger">停用选中</button>
+  <span class="batch-spacer"></span>
+  <button type="button" id="batchDisable">停用选中</button>
   <button type="button" id="batchEnable">启用选中</button>
   <button type="button" id="batchDone" class="primary">完成</button>
 </div>
