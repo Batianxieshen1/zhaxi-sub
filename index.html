@@ -1488,6 +1488,19 @@ function renderUpcoming() {
     : '<div class="up-none">这段时间没有订阅到期扣款</div>';
 }
 
+// App 壳本地通知：把未来 30 天扣款事件交给原生 AlarmManager 调度（WebView 桥存在时）
+function syncNativeNotifications() {
+  if (!window.nativeBridge || !window.nativeBridge.scheduleNotifications) return;
+  const events = upcomingCharges(30);
+  const payload = events.map((e) => ({
+    id: e.sub.id + '-' + e.date.getTime(),
+    name: e.sub.name,
+    amount: fmtMoney(e.sub.amount, e.sub.currency),
+    date: e.date.getTime(),
+  }));
+  window.nativeBridge.scheduleNotifications(JSON.stringify(payload));
+}
+
 // 核心渲染：总览三卡片 + 类别汇总 + 订阅列表
 function render() {
   subs = loadSubs(); // 同步全局数据源：本地/跨标签页改动都从这里刷新
@@ -1571,6 +1584,9 @@ function render() {
 
   // ⑦ 未来扣款清单
   renderUpcoming();
+
+  // ⑧ App 壳本地通知调度（浏览器环境自动跳过）
+  syncNativeNotifications();
 }
 
 // ---- 增删改表单 ----

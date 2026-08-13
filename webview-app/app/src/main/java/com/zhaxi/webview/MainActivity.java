@@ -2,10 +2,16 @@ package com.zhaxi.webview;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.DownloadManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -24,9 +30,13 @@ import android.widget.Toast;
 
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.Calendar;
 
 public class MainActivity extends Activity {
 
@@ -34,12 +44,17 @@ public class MainActivity extends Activity {
     private SwipeRefreshLayout swipe;
     private ValueCallback<Uri[]> filePathCallback;
     private static final int REQ_FILE = 9001;
+    private static final int REQ_NOTIFY = 9002;
     private static final String URL = "https://batianxieshen1.github.io/zhaxi-sub/";
+    public static final String CHANNEL_ID = "renewal";
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        createNotificationChannel();
+        requestNotificationPermission();
 
         webView = new WebView(this);
         WebSettings s = webView.getSettings();
@@ -54,7 +69,7 @@ public class MainActivity extends Activity {
         webView.setBackgroundColor(Color.WHITE);
         webView.setWebViewClient(new WebViewClient());
 
-        // JS 桥：网页导出文件（Blob 下载在 WebView 中不生效）→ 原生保存到下载目录
+        // JS 桥：网页导出文件 + 调度续费通知
         webView.addJavascriptInterface(new NativeBridge(this), "nativeBridge");
 
         // 常规链接下载（备用）
@@ -78,7 +93,7 @@ public class MainActivity extends Activity {
                 swipe.setRefreshing(newProgress < 100);
             }
 
-            // 文件选择器（网页「导入」按钮）：WebView 默认不响应 input[type=file]
+            // 文件选择器（网页「导入」按钮）
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 filePathCallback = callback;
@@ -98,6 +113,22 @@ public class MainActivity extends Activity {
 
         hideSystemUi();
         webView.loadUrl(URL);
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel ch = new NotificationChannel(
+                    CHANNEL_ID, "续费提醒", NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription("订阅续费到期提醒");
+            ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).createNotificationChannel(ch);
+        }
+    }
+
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFY);
+        }
     }
 
     @Override
@@ -145,7 +176,7 @@ public class MainActivity extends Activity {
         hideSystemUi();
     }
 
-    /** JS 桥：网页导出 → 保存到手机下载目录 */
+    /** JS 桥：网页导出 + 续费通知调度 */
     static class NativeBridge {
         private final Activity activity;
 
@@ -160,7 +191,6 @@ public class MainActivity extends Activity {
                 String safeName = fileName == null || fileName.isEmpty() ? "download.bin" : fileName;
                 String safeMime = mime == null || mime.isEmpty() ? "application/octet-stream" : mime;
                 if (Build.VERSION.SDK_INT >= 29) {
-                    // Android 10+：直接写 MediaStore.Downloads，无需任何权限，MIUI 兼容性最好
                     ContentValues values = new ContentValues();
                     values.put(MediaStore.Downloads.DISPLAY_NAME, safeName);
                     values.put(MediaStore.Downloads.MIME_TYPE, safeMime);
@@ -176,7 +206,6 @@ public class MainActivity extends Activity {
                     values.put(MediaStore.Downloads.IS_PENDING, 0);
                     activity.getContentResolver().update(uri, values, null, null);
                 } else {
-                    // 旧安卓：DownloadManager 复制到公共下载目录
                     File tmp = new File(activity.getCacheDir(), safeName);
                     try (FileOutputStream fos = new FileOutputStream(tmp)) {
                         fos.write(data);
@@ -196,6 +225,70 @@ public class MainActivity extends Activity {
                 activity.runOnUiThread(() -> Toast.makeText(activity,
                         "保存失败：" + msg, Toast.LENGTH_LONG).show());
             }
+        }
+
+        /** 网页把未来 30 天的扣款事件传来 → 原生调度"到期前一天 9 点"提醒 */
+        @JavascriptInterface
+        public void scheduleNotifications(String json) {
+            try {
+                JSONArray arr = new JSONArray(json);
+                AlarmManager am = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
+                // 先取消旧的调度（requestCode 0..99）
+                for (int i = 0; i < 100; i++) {
+                    Intent cancelIntent = new Intent(activity, NotificationReceiver.class);
+                    PendingIntent pi = PendingIntent.getBroadcast(activity, i, cancelIntent,
+                            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_NO_CREATE);
+                    if (pi != null) {
+                        am.cancel(pi);
+                        pi.cancel();
+                    }
+                }
+                int n = Math.min(arr.length(), 100);
+                for (int i = 0; i < n; i++) {
+                    JSONObject o = arr.getJSONObject(i);
+                    String name = o.optString("name", "订阅");
+                    String amount = o.optString("amount", "");
+                    long dueTime = o.optLong("date", 0);
+                    if (dueTime <= 0) continue;
+                    // 到期前一天早上 9 点提醒
+                    Calendar c = Calendar.getInstance();
+                    c.setTimeInMillis(dueTime);
+                    c.add(Calendar.DAY_OF_MONTH, -1);
+                    c.set(Calendar.HOUR_OF_DAY, 9);
+                    c.set(Calendar.MINUTE, 0);
+                    c.set(Calendar.SECOND, 0);
+                    long at = c.getTimeInMillis();
+                    if (at <= System.currentTimeMillis()) continue; // 已过提醒时间
+                    Intent intent = new Intent(activity, NotificationReceiver.class);
+                    intent.putExtra("name", name);
+                    intent.putExtra("amount", amount);
+                    PendingIntent pi = PendingIntent.getBroadcast(activity, i, intent,
+                            PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+                    // set()：免精确闹钟权限；对"提前一天提醒"场景足够
+                    am.set(AlarmManager.RTC_WAKEUP, at, pi);
+                }
+            } catch (Exception ignored) { }
+        }
+    }
+
+    /** 闹钟到点：发系统通知 */
+    public static class NotificationReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String name = intent.getStringExtra("name");
+            String amount = intent.getStringExtra("amount");
+            if (name == null) name = "订阅续费";
+            android.app.Notification.Builder b = Build.VERSION.SDK_INT >= 26
+                    ? new android.app.Notification.Builder(context, CHANNEL_ID)
+                    : new android.app.Notification.Builder(context);
+            android.app.Notification n = b
+                    .setSmallIcon(R.drawable.ic_notify)
+                    .setContentTitle("「" + name + "」明天续费")
+                    .setContentText(amount == null || amount.isEmpty() ? "查看订阅详情" : amount + " · 到期前一天提醒")
+                    .setAutoCancel(true)
+                    .build();
+            NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            nm.notify((int) (System.currentTimeMillis() % Integer.MAX_VALUE), n);
         }
     }
 }
