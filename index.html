@@ -280,6 +280,13 @@
   .amount-row select { flex: 0 0 auto; width: auto; padding: 10px 8px; font-size: 14px; }
   .amount-row input { flex: 1; }
 
+  /* 整行「添加订阅」按钮（iOS 添加 cell 风格） */
+  .add-full {
+    width: 100%; padding: 13px 0; font-size: 15px;
+    border-radius: 14px; margin-bottom: 14px;
+    box-shadow: 0 4px 14px rgba(0, 122, 255, .28);
+  }
+
   /* 搜索框 */
   .search-box {
     width: 100%; margin-bottom: 12px; padding: 10px 14px;
@@ -600,9 +607,9 @@
         <button data-sort="name">名称</button>
       </div>
       <button id="btnBatch" class="plain" title="批量停用/启用">批量</button>
-      <button id="btnAdd" class="primary">添加订阅<span class="btn-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
     </div>
     <input id="searchBox" class="search-box" type="search" placeholder="搜索名称 / 类别" autocomplete="off">
+    <button id="btnAdd" class="primary add-full">＋ 添加订阅</button>
     <ul class="sub-list" id="subList"></ul>
     <div class="empty" id="emptyState">
       <div class="empty-icon"><svg width="96" height="96" viewBox="0 0 96 96" fill="none" aria-hidden="true"><circle cx="48" cy="48" r="42" stroke="#E5E7EB" stroke-width="2.5"/><path d="M30 36h36M30 48h36M30 60h22" stroke="#C7CDD8" stroke-width="3" stroke-linecap="round"/><circle cx="66" cy="24" r="7" fill="#FFD9A0"/><path d="M66 10v5M66 33v5M52 24h5M75 24h5" stroke="#FFD9A0" stroke-width="2.5" stroke-linecap="round"/></svg></div>
