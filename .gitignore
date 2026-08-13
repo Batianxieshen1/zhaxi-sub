@@ -3,6 +3,10 @@
 __pycache__/
 *.pyc
 
+# 技能系统本地状态（不进仓库）
+.agents/
+skills-lock.json
+
 # 系统文件
 .DS_Store
 Thumbs.db
