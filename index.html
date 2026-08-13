@@ -280,6 +280,67 @@
   .amount-row select { flex: 0 0 auto; width: auto; padding: 10px 8px; font-size: 14px; }
   .amount-row input { flex: 1; }
 
+  /* 搜索框 */
+  .search-box {
+    width: 100%; margin-bottom: 12px; padding: 10px 14px;
+    border-radius: 12px; border: 1px solid var(--hairline);
+    background: var(--card); font-size: 14px; color: var(--text);
+    box-shadow: 0 1px 6px rgba(30, 50, 90, .05);
+  }
+  .search-box:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 122, 255, .15); }
+
+  /* 批量模式：行前勾选圈 */
+  .sel-circle {
+    flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+    border: 2px solid #c7ccd8; background: #fff; position: relative;
+    transition: all .18s;
+  }
+  .sel-circle.on { background: var(--accent); border-color: var(--accent); }
+  .sel-circle.on::after {
+    content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .sub-item.batch-selected { box-shadow: 0 0 0 2px rgba(0, 122, 255, .35), 0 1px 6px rgba(30, 50, 90, .05); }
+
+  /* 批量操作栏（底部悬浮） */
+  .batch-bar {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    z-index: 90; display: flex; align-items: center; gap: 8px;
+    background: rgba(29, 29, 31, .88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 999px; padding: 8px 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  }
+  .batch-bar span { color: #fff; font-size: 12px; white-space: nowrap; }
+  .batch-bar button { padding: 6px 12px; font-size: 12px; border-radius: 999px; }
+  .batch-bar button.plain { background: transparent; color: #fff; }
+  .batch-bar button.danger { background: #ff453a; }
+  .batch-bar button:not(.danger):not(.plain):not(.primary) { background: rgba(255, 255, 255, .18); color: #fff; }
+  .batch-bar button.primary { background: var(--accent); }
+
+  /* 未来扣款清单 */
+  .upcoming-total {
+    font-size: 13px; color: var(--muted); margin: -6px 0 10px;
+  }
+  .upcoming-total b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .upcoming-list { display: flex; flex-direction: column; gap: 8px; }
+  .up-item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card); border-radius: 14px; padding: 10px 14px;
+    box-shadow: 0 1px 6px rgba(30, 50, 90, .05);
+    animation: appleIn .5s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .up-date {
+    flex: 0 0 auto; text-align: center; min-width: 52px;
+  }
+  .up-date .d { font-size: 17px; font-weight: 700; line-height: 1.1; }
+  .up-date .m { font-size: 11px; color: var(--tertiary); }
+  .up-date.today .d { color: var(--accent); }
+  .up-info { flex: 1; min-width: 0; }
+  .up-info .n { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .up-info .p { font-size: 12px; color: var(--tertiary); }
+  .up-amt { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .up-none { text-align: center; color: var(--tertiary); font-size: 13px; padding: 12px 0; }
+
   /* 空状态 */
   .empty { text-align: center; color: var(--muted); padding: 64px 0; }
   .empty-icon { font-size: 52px; margin-bottom: 14px; }
@@ -430,6 +491,9 @@
   .cal-ev span { flex: 1; font-weight: 500; }
   .cal-ev b { color: var(--accent); font-variant-numeric: tabular-nums; }
   .cal-ev em { font-style: normal; color: var(--tertiary); font-size: 12px; }
+  .cal-ev.end span { color: var(--muted); }
+  .cal-dots-wrap { display: flex; gap: 3px; }
+  .dots.end .dot { background: var(--tertiary); }
   .cal-none { text-align: center; color: var(--tertiary); font-size: 13px; padding: 18px 0; }
   .cal-close-row { text-align: center; margin-top: 16px; }
 </style>
@@ -502,6 +566,20 @@
   <!-- 类别汇总 -->
   <section class="by-category" id="byCategory"></section>
 
+  <!-- 未来扣款清单（实际扣款预览） -->
+  <section class="upcoming" id="upcomingSection">
+    <div class="section-head">
+      <h2>未来扣款</h2>
+      <div class="seg" id="upcomingSeg">
+        <button data-days="7" class="active">7 天</button>
+        <button data-days="30">30 天</button>
+        <button data-days="90">90 天</button>
+      </div>
+    </div>
+    <div class="upcoming-total" id="upcomingTotal"></div>
+    <div class="upcoming-list" id="upcomingList"></div>
+  </section>
+
   <!-- 订阅清单 -->
   <section>
     <div class="section-head">
@@ -511,8 +589,10 @@
         <button data-sort="monthly">每月</button>
         <button data-sort="name">名称</button>
       </div>
+      <button id="btnBatch" class="plain" title="批量停用/启用">批量</button>
       <button id="btnAdd" class="primary">添加订阅<span class="btn-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></button>
     </div>
+    <input id="searchBox" class="search-box" type="search" placeholder="搜索名称 / 类别" autocomplete="off">
     <ul class="sub-list" id="subList"></ul>
     <div class="empty" id="emptyState">
       <div class="empty-icon"><svg width="96" height="96" viewBox="0 0 96 96" fill="none" aria-hidden="true"><circle cx="48" cy="48" r="42" stroke="#E5E7EB" stroke-width="2.5"/><path d="M30 36h36M30 48h36M30 60h22" stroke="#C7CDD8" stroke-width="3" stroke-linecap="round"/><circle cx="66" cy="24" r="7" fill="#FFD9A0"/><path d="M66 10v5M66 33v5M52 24h5M75 24h5" stroke="#FFD9A0" stroke-width="2.5" stroke-linecap="round"/></svg></div>
@@ -597,6 +677,16 @@
       <label for="fNote">备注</label>
       <input id="fNote" placeholder="可选">
     </div>
+    <div class="row2">
+      <div class="field">
+        <label for="fTrialEnd">试用结束日（可选）</label>
+        <input id="fTrialEnd" type="date">
+      </div>
+      <div class="field">
+        <label for="fCancelAt">取消生效日（可选）</label>
+        <input id="fCancelAt" type="date">
+      </div>
+    </div>
     <div class="field">
       <label class="switch-row">
         <span id="activeLabel">计入统计</span>
@@ -644,6 +734,15 @@
 
 <!-- Toast 提示容器 -->
 <div id="toastBox" class="toast-box"></div>
+
+<!-- 批量操作栏 -->
+<div id="batchBar" class="batch-bar" hidden>
+  <button type="button" id="batchAll" class="plain">全选</button>
+  <span id="batchCount">已选 0 项</span>
+  <button type="button" id="batchDisable" class="danger">停用选中</button>
+  <button type="button" id="batchEnable">启用选中</button>
+  <button type="button" id="batchDone" class="primary">完成</button>
+</div>
 
 <script>
 // ==================== 逻辑层 ====================
@@ -698,6 +797,8 @@ function normalizeSub(s, idx) {
     note: s && s.note ? String(s.note) : '',
     currency: s && CURRENCIES.includes(s.currency) ? s.currency : 'CNY',
     count: s && s.period === 'every_n' ? Math.max(1, Math.round(Number(s.count) || 1)) : null,
+    trialEnd: s && typeof s.trialEnd === 'string' ? s.trialEnd : '',
+    cancelAt: s && typeof s.cancelAt === 'string' ? s.cancelAt : '',
     active: !(s && s.active === false),
   };
 }
@@ -1041,11 +1142,54 @@ function calEventsForMonth(y, m) {
   return map;
 }
 
+// 未来 N 天内的实际扣款事件（含今天）：[{ date, sub }] 按日期升序
+function upcomingCharges(days) {
+  const out = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = new Date(today.getTime() + days * 86400000);
+  for (const s of subs) {
+    if (s.active === false) continue;
+    const info = unitInfo(s);
+    if (!info || !s.start) continue;
+    const start = new Date(s.start + 'T00:00:00');
+    if (isNaN(start)) continue;
+    let k = 0, guard = 0;
+    while (guard++ < 5000) {
+      const d = kthRenewalDate(s, k);
+      if (!d) break;
+      if (d > end) break;
+      if (d >= today) out.push({ date: d, sub: s });
+      k++;
+    }
+  }
+  out.sort((a, b) => a.date - b.date);
+  return out;
+}
+
+// 某月有试用结束/服务截止的日期 → { day: [{ sub, label }] }
+function calEndEventsForMonth(y, m) {
+  const map = {};
+  for (const s of subs) {
+    for (const [key, label] of [['trialEnd', '试用结束'], ['cancelAt', '服务截止']]) {
+      const v = s[key];
+      if (!v) continue;
+      const d = new Date(v + 'T00:00:00');
+      if (isNaN(d)) continue;
+      if (d.getFullYear() === y && d.getMonth() === m) {
+        (map[d.getDate()] = map[d.getDate()] || []).push({ sub: s, label: label });
+      }
+    }
+  }
+  return map;
+}
+
 function renderCal() {
   const y = calCursor.getFullYear();
   const m = calCursor.getMonth();
   document.getElementById('calTitle').textContent = y + '年' + (m + 1) + '月';
   const events = calEventsForMonth(y, m);
+  const ends = calEndEventsForMonth(y, m);
   const today = new Date();
   const firstDay = new Date(y, m, 1).getDay();
   const days = new Date(y, m + 1, 0).getDate();
@@ -1056,8 +1200,10 @@ function renderCal() {
     const isToday = y === today.getFullYear() && m === today.getMonth() && d === today.getDate();
     const isSel = calSelected && calSelected.y === y && calSelected.m === m && calSelected.d === d;
     const has = events[d] ? events[d].length : 0;
+    const hasEnd = ends[d] ? ends[d].length : 0;
     html += '<div class="cal-day' + (isToday ? ' today' : '') + (isSel ? ' sel' : '') + '" data-d="' + d + '" tabindex="0">' +
-      d + (has ? '<span class="dots"><i class="dot"></i></span>' : '') + '</div>';
+      d + (has ? '<span class="dots"><i class="dot"></i></span>' : '') +
+      (hasEnd ? '<span class="dots end"><i class="dot"></i></span>' : '') + '</div>';
   }
   document.getElementById('calGrid').innerHTML = html;
 
@@ -1068,13 +1214,23 @@ function renderCal() {
   }
   document.getElementById('calTotal').textContent = '本月预计扣款：' + fmtMoney(monthTotal, majorityCurrency(subs));
 
-  // 选中日期的到期订阅列表
+  // 选中日期的事件列表（续费 + 试用/截止）
   const selEvents = calSelected ? events[calSelected.d] : null;
-  document.getElementById('calEvents').innerHTML = selEvents && selEvents.length
-    ? selEvents.map((s) =>
-        '<div class="cal-ev"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;color:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' + esc(s.name) + '</span><b>' + fmtMoney(s.amount, s.currency) + '</b><em>' + periodText(s) + '</em></div>'
-      ).join('')
-    : '<div class="cal-none">' + (calSelected ? '这天没有订阅到期' : '点击日期，查看当天到期的订阅') + '</div>';
+  const selEnds = calSelected ? ends[calSelected.d] : null;
+  const parts = [];
+  if (selEvents && selEvents.length) {
+    parts.push(selEvents.map((s) =>
+      '<div class="cal-ev"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;color:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' + esc(s.name) + '</span><b>' + fmtMoney(s.amount, s.currency) + '</b><em>' + periodText(s) + '</em></div>'
+    ).join(''));
+  }
+  if (selEnds && selEnds.length) {
+    parts.push(selEnds.map((e) =>
+      '<div class="cal-ev end"><span>' + esc(e.sub.name) + ' · ' + e.label + '</span></div>'
+    ).join(''));
+  }
+  document.getElementById('calEvents').innerHTML = parts.length
+    ? parts.join('')
+    : '<div class="cal-none">' + (calSelected ? '这天没有订阅事件' : '点击日期，查看当天事件') + '</div>';
 }
 
 function openCalendar() {
@@ -1194,6 +1350,24 @@ function renewalText(sub) {
   return '下次续费：' + d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日' + suffix;
 }
 
+// 搜索过滤：按名称/类别（不区分大小写）
+function filterSubs(list, q) {
+  if (!q) return list;
+  const lq = q.toLowerCase();
+  return list.filter((s) =>
+    (s.name || '').toLowerCase().includes(lq) || (s.category || '').toLowerCase().includes(lq));
+}
+
+// 批量模式状态
+let batchMode = false;
+let batchSel = new Set();
+let searchQuery = '';
+
+function renderBatchBar() {
+  document.getElementById('batchBar').hidden = !batchMode;
+  document.getElementById('batchCount').textContent = '已选 ' + batchSel.size + ' 项';
+}
+
 // 排序：daily/monthly 降序，name 按中文拼音
 function sortSubs(list, key) {
   const arr = [...list];
@@ -1285,6 +1459,35 @@ function dailyAnalogy(daily) {
   return '≈ 一天不到五毛钱';
 }
 
+// 未来扣款清单渲染
+let upcomingDays = 30;
+function renderUpcoming() {
+  const events = upcomingCharges(upcomingDays);
+  const total = events.reduce((s, e) => s + (Number(e.sub.amount) || 0), 0);
+  document.getElementById('upcomingTotal').innerHTML =
+    events.length
+      ? '未来 <b>' + upcomingDays + ' 天</b> 预计扣款 <b>' + fmtMoney(total, majorityCurrency(subs)) + '</b> · 共 ' + events.length + ' 笔'
+      : '未来 ' + upcomingDays + ' 天没有订阅扣款';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  document.getElementById('upcomingList').innerHTML = events.length
+    ? events.map((e) => {
+        const isToday = e.date.getTime() === today.getTime();
+        return '<div class="up-item">' +
+          '<div class="up-date' + (isToday ? ' today' : '') + '">' +
+            '<div class="d">' + e.date.getDate() + '</div>' +
+            '<div class="m">' + (e.date.getMonth() + 1) + '月</div>' +
+          '</div>' +
+          '<div class="up-info">' +
+            '<div class="n">' + esc(e.sub.name) + (isToday ? ' · 今天' : '') + '</div>' +
+            '<div class="p">' + periodText(e.sub) + '</div>' +
+          '</div>' +
+          '<div class="up-amt">' + fmtMoney(e.sub.amount, e.sub.currency) + '</div>' +
+        '</div>';
+      }).join('')
+    : '<div class="up-none">这段时间没有订阅到期扣款</div>';
+}
+
 // 核心渲染：总览三卡片 + 类别汇总 + 订阅列表
 function render() {
   subs = loadSubs(); // 同步全局数据源：本地/跨标签页改动都从这里刷新
@@ -1310,13 +1513,23 @@ function render() {
 
   // ③ 订阅列表
   const sortKey = document.querySelector('#sortSeg button.active').dataset.sort;
-  const sorted = sortSubs(subs, sortKey);
+  let sorted = sortSubs(subs, sortKey);
+  sorted = filterSubs(sorted, searchQuery);
   document.getElementById('subList').innerHTML = sorted.map((sub) => {
     const c = calcCosts(sub);
     const inactive = sub.active === false;
-    const meta = [inactive ? '已取消' : '', periodText(sub), renewalText(sub), sub.note].filter(Boolean).join(' · ');
+    const selMark = batchMode
+      ? '<div class="sel-circle' + (batchSel.has(sub.id) ? ' on' : '') + '"></div>'
+      : '';
+    const _today = new Date();
+    _today.setHours(0, 0, 0, 0);
+    const life = [];
+    if (sub.trialEnd && new Date(sub.trialEnd + 'T00:00:00') >= _today) life.push('试用至 ' + sub.trialEnd);
+    if (sub.cancelAt) life.push('服务至 ' + sub.cancelAt);
+    const meta = [inactive ? '已取消' : '', periodText(sub), renewalText(sub)].concat(life).concat([sub.note]).filter(Boolean).join(' · ');
     return (
-      '<li class="sub-item' + (inactive ? ' inactive' : '') + '" data-id="' + esc(sub.id) + '">' +
+      '<li class="sub-item' + (inactive ? ' inactive' : '') + (batchMode && batchSel.has(sub.id) ? ' batch-selected' : '') + '" data-id="' + esc(sub.id) + '">' +
+        selMark +
         '<div class="icon ' + catIconBg(sub.category) + '">' + catIcon(sub.category) + '</div>' +
         '<div class="info">' +
           '<div class="name">' + esc(sub.name) + '</div>' +
@@ -1355,6 +1568,9 @@ function render() {
   // ⑥ 类别占比环形图
   renderDonut(byCategory);
   bindDonutHover();
+
+  // ⑦ 未来扣款清单
+  renderUpcoming();
 }
 
 // ---- 增删改表单 ----
@@ -1374,6 +1590,8 @@ function openDialog(sub) {
   f('fStart').value = sub ? sub.start || '' : '';
   f('fEnd').value = sub ? sub.end || '' : '';
   f('fNote').value = sub ? sub.note || '' : '';
+  f('fTrialEnd').value = sub ? sub.trialEnd || '' : '';
+  f('fCancelAt').value = sub ? sub.cancelAt || '' : '';
   f('fActive').checked = sub ? sub.active !== false : true;
   updateActiveUI();
   f('yearsField').hidden = (sub ? sub.period : 'yearly') !== 'one_time';
@@ -1400,6 +1618,8 @@ function collectForm() {
     note: f('fNote').value.trim(),
     currency: CURRENCIES.includes(f('fCurrency').value) ? f('fCurrency').value : 'CNY',
     count: period === 'every_n' ? Math.max(1, Math.round(Number(f('fCount').value) || 1)) : null,
+    trialEnd: f('fTrialEnd').value,
+    cancelAt: f('fCancelAt').value,
     active: !f('fActive').checked,
   };
 }
@@ -1498,13 +1718,19 @@ function init() {
   document.getElementById('btnAdd').addEventListener('click', () => openDialog());
   document.getElementById('btnAddEmpty').addEventListener('click', () => openDialog());
 
-  // 列表：整行点击编辑 + 编辑/删除按钮（事件委托）
+  // 列表：整行点击编辑（批量模式下为勾选）+ 编辑/删除按钮（事件委托）
   document.getElementById('subList').addEventListener('click', (e) => {
     const row = e.target.closest('.sub-item');
     if (!row) return;
     const id = row.dataset.id;
     const sub = subs.find((s) => s.id === id);
     if (!sub) return;
+    if (batchMode) {
+      if (batchSel.has(id)) batchSel.delete(id); else batchSel.add(id);
+      renderBatchBar();
+      render();
+      return;
+    }
     const btn = e.target.closest('button[data-action]');
     if (btn && btn.dataset.action === 'edit') { openDialog(sub); return; }
     if (btn && btn.dataset.action === 'del') {
@@ -1523,6 +1749,52 @@ function init() {
       return;
     }
     openDialog(sub); // 整行点击 → 编辑
+  });
+
+  // 搜索：实时过滤
+  document.getElementById('searchBox').addEventListener('input', (e) => {
+    searchQuery = e.target.value.trim();
+    render();
+  });
+
+  // 批量管理
+  document.getElementById('btnBatch').addEventListener('click', () => {
+    batchMode = !batchMode;
+    if (!batchMode) batchSel.clear();
+    renderBatchBar();
+    render();
+  });
+  document.getElementById('batchAll').addEventListener('click', () => {
+    const visible = filterSubs(subs, searchQuery).map((s) => s.id);
+    if (batchSel.size === visible.length && visible.length > 0) {
+      batchSel.clear();
+    } else {
+      batchSel = new Set(visible);
+    }
+    renderBatchBar();
+    render();
+  });
+  const applyBatchActive = (val, msg) => {
+    if (!batchSel.size) { toast('请先勾选订阅', 'error'); return; }
+    let n = 0;
+    subs = subs.map((s) => {
+      if (batchSel.has(s.id) && s.active !== val) { s.active = val; n++; }
+      return s;
+    });
+    saveSubs(subs);
+    toast((val ? '已启用 ' : '已停用 ') + n + ' 项订阅');
+    batchMode = false;
+    batchSel.clear();
+    renderBatchBar();
+    render();
+  };
+  document.getElementById('batchDisable').addEventListener('click', () => applyBatchActive(false));
+  document.getElementById('batchEnable').addEventListener('click', () => applyBatchActive(true));
+  document.getElementById('batchDone').addEventListener('click', () => {
+    batchMode = false;
+    batchSel.clear();
+    renderBatchBar();
+    render();
   });
 
   // 弹窗内实时预览
@@ -1590,6 +1862,15 @@ function init() {
     if (!btn) return;
     document.getElementById('fCategory').value = btn.dataset.cat;
     updateLivePreview();
+  });
+
+  // 未来扣款时间段切换
+  document.getElementById('upcomingSeg').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-days]');
+    if (!btn) return;
+    document.querySelectorAll('#upcomingSeg button').forEach((b) => b.classList.toggle('active', b === btn));
+    upcomingDays = Number(btn.dataset.days);
+    renderUpcoming();
   });
 
   // 「计入统计」开关：状态联动

@@ -27,10 +27,10 @@ const ctx = {
 vm.createContext(ctx);
 // 追加一行导出：const 声明的词法绑定不会自动挂到 context 上，需在沙箱内显式导出
 vm.runInContext(
-  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, majorityCurrency, __setSubs: (l) => { subs = l; }, DEFAULT_DATA };',
+  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, __setSubs: (l) => { subs = l; }, DEFAULT_DATA };',
   ctx
 );
-const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, majorityCurrency, __setSubs, DEFAULT_DATA } = ctx.__exports;
+const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, __setSubs, DEFAULT_DATA } = ctx.__exports;
 
 function approx(actual, expected, eps = 1e-9) {
   assert.ok(Math.abs(actual - expected) < eps,
@@ -260,5 +260,54 @@ ev = calEventsForMonth(2026, 10); // 2026 年 11 月：8/6 起每 3 月 → 11/6
 assert.ok(ev[6] && ev[6].length === 1 && ev[6][0].id === 'q1', '季付在 11/6 有事件');
 ev = calEventsForMonth(2026, 8); // 2026 年 9 月：无事件
 assert.equal(Object.keys(ev).length, 0, '季付在 9 月无事件');
+
+console.log('▶ 未来扣款清单（C1）');
+const _now = new Date();
+const _d10 = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() + 10); // 10 天后
+const _fmt = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+__setSubs([
+  { id: 'u1', name: '月付U', period: 'monthly', amount: 15, start: '2026-01-06' },
+  { id: 'u2', name: '年付U', period: 'yearly', amount: 68, start: _fmt(_d10) },
+  { id: 'u3', name: '停用U', period: 'monthly', amount: 999, start: '2026-01-01', active: false },
+  { id: 'u4', name: '买断U', period: 'one_time', amount: 698, years: 3, start: '2026-01-01' },
+]);
+// 注：upcomingCharges 用真实“今天”，只验证结构性质
+const up = upcomingCharges(90);
+assert.ok(Array.isArray(up));
+assert.ok(up.every((e) => e.date && typeof e.date.getTime === 'function' && e.sub));
+assert.ok(!up.some((e) => e.sub.id === 'u3'), '停用的订阅不进入扣款清单');
+assert.ok(!up.some((e) => e.sub.id === 'u4'), '一次性/自定义不进入扣款清单');
+for (let i = 1; i < up.length; i++) assert.ok(up[i].date >= up[i - 1].date, '按日期升序');
+const upNames = new Set(up.map((e) => e.sub.id));
+assert.ok(upNames.has('u1'), '月付在 90 天内有扣款');
+assert.ok(upNames.has('u2'), '年付在 90 天内有扣款');
+
+console.log('▶ 搜索过滤（C2）');
+const fl = filterSubs([
+  { name: 'Netflix 视频', category: '视频' },
+  { name: '健身房', category: '生活' },
+], 'net');
+assert.equal(fl.length, 1);
+assert.equal(fl[0].name, 'Netflix 视频');
+assert.equal(filterSubs([
+  { name: 'A', category: '学习' }, { name: 'B', category: '工具' },
+], '工具').length, 1); // 按类别过滤
+assert.equal(filterSubs([{ name: 'A' }], '').length, 1); // 空查询不过滤
+
+console.log('▶ 生命周期字段（C4）');
+const norm = normalizeSub({ name: 'x', trialEnd: '2026-09-01', cancelAt: '2026-10-01' });
+assert.equal(norm.trialEnd, '2026-09-01');
+assert.equal(norm.cancelAt, '2026-10-01');
+assert.equal(normalizeSub({ name: 'x' }).trialEnd, ''); // 老数据无字段 → 空
+__setSubs([
+  { id: 't1', name: '试用T', period: 'monthly', amount: 15, start: '2026-08-01', trialEnd: '2026-09-01' },
+  { id: 't2', name: '取消T', period: 'yearly', amount: 100, start: '2026-01-01', cancelAt: '2026-10-15', active: false },
+]);
+let ends = calEndEventsForMonth(2026, 8); // 9 月：试用结束
+assert.ok(ends[1] && ends[1].length === 1 && ends[1][0].sub.id === 't1' && ends[1][0].label === '试用结束');
+ends = calEndEventsForMonth(2026, 9); // 10 月：服务截止
+assert.ok(ends[15] && ends[15][0].sub.id === 't2' && ends[15][0].label === '服务截止');
+ends = calEndEventsForMonth(2026, 7); // 8 月：无
+assert.equal(Object.keys(ends).length, 0);
 
 console.log('✅ 全部断言通过（' + DEFAULT_DATA.length + ' 条示例数据）');
