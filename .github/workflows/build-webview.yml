@@ -25,7 +25,9 @@ jobs:
 
       - name: 构建 debug APK
         working-directory: webview-app
-        run: gradle assembleDebug --no-daemon
+        run: |
+          gradle wrapper --gradle-version 8.7 --no-daemon
+          ./gradlew assembleDebug --no-daemon
 
       - name: 上传 APK
         uses: actions/upload-artifact@v4
