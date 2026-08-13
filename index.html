@@ -55,7 +55,8 @@
   .topbar .actions { display: flex; gap: 6px; }
   .topbar button { padding: 6px 12px; }
   @media (max-width: 480px) {
-    .topbar h1 { display: none; }
+    .topbar h1 { font-size: 13px; }
+    .topbar .en-sub { display: none; }
     .topbar { padding: 7px 10px; }
     .topbar button { padding: 6px 10px; }
   }
@@ -235,10 +236,21 @@
 
   /* 弹窗表单（iOS modal：弹簧缩放进入） */
   dialog {
-    border: none; border-radius: 22px; padding: 0; width: min(420px, 92vw);
+    border: none; border-radius: 22px; padding: 0; width: min(480px, 92vw);
     box-shadow: 0 24px 80px rgba(15, 35, 80, .3);
     animation: appleModal .45s cubic-bezier(.34, 1.56, .64, 1) both;
   }
+  /* 移动端：底部 Sheet */
+  @media (max-width: 600px) {
+    #subDialog {
+      width: 100%; max-width: 100%; margin: auto 0 0;
+      position: fixed; bottom: 0; left: 0;
+      border-radius: 20px 20px 0 0;
+      max-height: 88vh; overflow-y: auto;
+      animation: sheetUp .32s cubic-bezier(.2, .8, .2, 1) both;
+    }
+  }
+  @keyframes sheetUp { from { transform: translateY(60%); } to { transform: none; } }
   dialog::backdrop { background: rgba(0, 0, 0, .35);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
@@ -262,6 +274,33 @@
   .form-actions button[type="submit"]:hover { background: var(--accent-hover); }
   .form-actions #btnCancel { background: #f2f2f7; color: var(--text); }
   .form-actions #btnCancel:hover { background: #e8e8ed; }
+  /* Sheet 模式下保存按钮吸底 */
+  @media (max-width: 600px) {
+    .form-actions {
+      position: sticky; bottom: -24px; margin: 20px -24px -24px;
+      padding: 12px 24px calc(12px + env(safe-area-inset-bottom));
+      background: var(--card); border-top: 1px solid var(--hairline);
+    }
+  }
+
+  /* 更多设置折叠 */
+  .more-settings { border-top: 1px solid var(--hairline); margin-top: 16px; }
+  .more-settings summary {
+    list-style: none; display: flex; align-items: center; gap: 8px;
+    padding: 14px 2px; cursor: pointer; font-size: 14px; font-weight: 600;
+    color: var(--text); user-select: none;
+  }
+  .more-settings summary::-webkit-details-marker { display: none; }
+  .more-settings summary .more-hint {
+    flex: 1; font-size: 12px; font-weight: 400; color: var(--tertiary);
+  }
+  .more-settings summary .more-chev { color: var(--tertiary); transition: transform .2s; }
+  .more-settings[open] summary .more-chev { transform: rotate(180deg); }
+  .more-settings .more-body { padding-top: 4px; }
+
+  /* 字段下方校验错误 */
+  .field-error { font-size: 12px; color: var(--danger); margin-top: 4px; }
+  .field input.invalid, .field select.invalid { border-color: var(--danger); background: #fff7f6; }
 
   /* 分段控件（iOS segmented control） */
   .seg { display: flex; background: rgba(118, 118, 128, .12); border-radius: 10px; padding: 2px; }
@@ -410,6 +449,34 @@
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 
+  /* 更多菜单（底部 Sheet） */
+  .menu-dialog { width: min(320px, 94vw); }
+  @media (max-width: 600px) {
+    .menu-dialog {
+      width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 20px 20px 0 0;
+      position: fixed; bottom: 0; left: 0;
+    }
+  }
+  .menu-body { padding: 10px 14px 18px; }
+  .menu-grabber {
+    width: 36px; height: 5px; border-radius: 999px; background: #d1d1d6;
+    margin: 0 auto 10px;
+  }
+  .menu-title { text-align: center; font-size: 13px; color: var(--muted); font-weight: 600; margin: 0 0 8px; }
+  .menu-body button {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; text-align: left; background: var(--card); color: var(--text);
+    border-radius: 12px; padding: 13px 14px; font-size: 15px; margin-bottom: 4px;
+    transition: background .15s;
+  }
+  .menu-body button:hover { background: #f2f2f7; }
+  .menu-body button svg { color: var(--accent); flex: 0 0 auto; }
+  .menu-body .menu-cancel {
+    justify-content: center; color: var(--accent); font-weight: 600;
+    margin-top: 8px; background: #f2f2f7;
+  }
+  .menu-body .menu-cancel:hover { background: #e8e8ed; }
+
   /* 实时时钟 */
   .clock {
     font-size: 13px; color: var(--tertiary); margin-top: 10px;
@@ -520,14 +587,24 @@
 <header class="topbar">
   <h1>朝 夕 <span class="en-sub">Dawn Ledger</span></h1>
   <div class="actions">
-    <button id="btnCal" title="续费日历：查看订阅到期日"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="calDot" class="cal-dot" hidden></span></button>
-    <button id="btnExport" title="导出数据备份">导出</button>
-    <button id="btnExportCSV" title="导出 CSV（Excel 可打开）">CSV</button>
-    <button id="btnExportICS" title="导出续费日历（导入系统日历后由系统提醒）">日历</button>
-    <button id="btnImport" title="导入备份文件">导入</button>
+    <button id="btnCal" title="续费日历：查看订阅到期日"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="calDot" class="cal-dot" hidden></span></button>
+    <button id="btnMore" title="更多：导入与导出"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg></button>
     <input type="file" id="importFile" accept=".json,application/json" hidden>
   </div>
 </header>
+
+<!-- 更多菜单（底部 Sheet） -->
+<dialog id="menuDialog" class="menu-dialog">
+  <div class="menu-body">
+    <div class="menu-grabber"></div>
+    <h3 class="menu-title">导入与导出</h3>
+    <button type="button" data-menu="import"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>导入备份</button>
+    <button type="button" data-menu="export-json"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出 JSON 备份</button>
+    <button type="button" data-menu="export-csv"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出 CSV 表格</button>
+    <button type="button" data-menu="export-ics"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>导出续费日历</button>
+    <button type="button" id="menuCancel" class="menu-cancel">取消</button>
+  </div>
+</dialog>
 
 <main>
   <!-- 页面标题 -->
@@ -622,25 +699,12 @@
 
 <!-- 添加 / 编辑弹窗 -->
 <dialog id="subDialog">
-  <form id="subForm" class="form-body">
+  <form id="subForm" class="form-body" novalidate>
     <h3 id="dialogTitle">添加订阅</h3>
     <input type="hidden" id="fId">
     <div class="field">
       <label for="fName">名称 *</label>
-      <input id="fName" placeholder="如：Netflix / iCloud / 健身房" required>
-    </div>
-    <div class="field">
-      <label for="fCategory">类别</label>
-      <input id="fCategory" list="catList" placeholder="如：视频 / 工具 / 学习">
-      <datalist id="catList">
-        <option value="视频"></option>
-        <option value="音乐"></option>
-        <option value="工具"></option>
-        <option value="学习"></option>
-        <option value="生活"></option>
-        <option value="其他"></option>
-      </datalist>
-      <div class="cat-chips" id="catChips"></div>
+      <input id="fName" placeholder="如：Netflix / iCloud / 健身房">
     </div>
     <div class="row2">
       <div class="field">
@@ -668,7 +732,7 @@
             <option value="HKD">HK$</option>
             <option value="KRW">₩</option>
           </select>
-          <input id="fAmount" type="number" min="0" step="0.01" placeholder="199" required>
+          <input id="fAmount" type="number" min="0" step="0.01" placeholder="199">
         </div>
       </div>
     </div>
@@ -690,29 +754,49 @@
         <input id="fEnd" type="date">
       </div>
     </div>
-    <div class="field">
-      <label for="fNote">备注</label>
-      <input id="fNote" placeholder="可选">
-    </div>
-    <div class="row2">
-      <div class="field">
-        <label for="fTrialEnd">试用结束日（可选）</label>
-        <input id="fTrialEnd" type="date">
-      </div>
-      <div class="field">
-        <label for="fCancelAt">取消生效日（可选）</label>
-        <input id="fCancelAt" type="date">
-      </div>
-    </div>
-    <div class="field">
-      <label class="switch-row">
-        <span id="activeLabel">计入统计</span>
-        <input type="checkbox" id="fActive" class="switch">
-        <span class="track"></span>
-      </label>
-      <div class="switch-hint" id="activeHint">开关打开：正常计入总览、日历与应用内到期提示</div>
-    </div>
     <div class="live-preview" id="livePreview">≈ 每天 ¥0.00 · 每月 ¥0.00 · 每年 ¥0.00</div>
+
+    <details class="more-settings" id="moreSettings">
+      <summary><span>更多设置</span><span class="more-hint">类别、试用、备注等</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="more-chev"><polyline points="6 9 12 15 18 9"/></svg></summary>
+      <div class="more-body">
+        <div class="field">
+          <label for="fCategory">类别</label>
+          <input id="fCategory" list="catList" placeholder="如：视频 / 工具 / 学习">
+          <datalist id="catList">
+            <option value="视频"></option>
+            <option value="音乐"></option>
+            <option value="工具"></option>
+            <option value="学习"></option>
+            <option value="生活"></option>
+            <option value="其他"></option>
+          </datalist>
+          <div class="cat-chips" id="catChips"></div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label for="fTrialEnd">试用结束日（可选）</label>
+            <input id="fTrialEnd" type="date">
+          </div>
+          <div class="field">
+            <label for="fCancelAt">取消生效日（可选）</label>
+            <input id="fCancelAt" type="date">
+          </div>
+        </div>
+        <div class="field">
+          <label for="fNote">备注</label>
+          <input id="fNote" placeholder="可选">
+        </div>
+        <div class="field">
+          <label class="switch-row">
+            <span id="activeLabel">计入统计</span>
+            <input type="checkbox" id="fActive" class="switch">
+            <span class="track"></span>
+          </label>
+          <div class="switch-hint" id="activeHint">开关打开：正常计入总览、日历与应用内到期提示</div>
+        </div>
+      </div>
+    </details>
+
     <div class="form-actions">
       <button type="button" id="btnCancel">取消</button>
       <button type="submit" class="primary">保存</button>
@@ -1665,25 +1749,58 @@ function collectForm() {
     count: period === 'every_n' ? Math.max(1, Math.round(Number(f('fCount').value) || 1)) : null,
     trialEnd: f('fTrialEnd').value,
     cancelAt: f('fCancelAt').value,
-    active: !f('fActive').checked,
+    active: f('fActive').checked,
   };
+}
+
+// 字段下方错误提示：设置/清除
+function setFieldError(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const field = el.closest('.field');
+  let err = field ? field.querySelector('.field-error') : null;
+  if (msg) {
+    if (!err) {
+      err = document.createElement('div');
+      err.className = 'field-error';
+      field.appendChild(err);
+    }
+    err.textContent = msg;
+    el.classList.add('invalid');
+  } else {
+    if (err) err.remove();
+    el.classList.remove('invalid');
+  }
 }
 
 function onSubmit(e) {
   e.preventDefault();
   const data = collectForm();
-  if (!data.name) return;
+  setFieldError('fName', '');
+  setFieldError('fYears', '');
+  setFieldError('fStart', '');
+  setFieldError('fEnd', '');
+  if (!data.name) {
+    setFieldError('fName', '请输入订阅名称');
+    document.getElementById('fName').focus();
+    return;
+  }
   if (data.period === 'one_time' && !(data.years > 0)) {
-    toast('一次性买断需要填写「预计使用年数」', 'error');
+    setFieldError('fYears', '一次性买断需要填写「预计使用年数」');
+    document.getElementById('fYears').focus();
     return;
   }
   if (data.period === 'custom') {
-    if (!data.start || !data.end) {
-      toast('自定义时间段需要填写开始和结束日期', 'error');
+    if (!data.start) {
+      setFieldError('fStart', '请选择开始日期');
+      return;
+    }
+    if (!data.end) {
+      setFieldError('fEnd', '请选择结束日期');
       return;
     }
     if (data.end <= data.start) {
-      toast('结束日期必须晚于开始日期', 'error');
+      setFieldError('fEnd', '结束日期必须晚于开始日期');
       return;
     }
   }
@@ -1703,7 +1820,7 @@ function init() {
   subs = loadSubs();
 
   // 导出备份（JSON 信息包：版本 + 导出时间 + 订阅列表）—— 先确认防误触
-  document.getElementById('btnExport').addEventListener('click', () => {
+  function doExportJSON() {
     askConfirm('确定导出数据备份（JSON）？', { okText: '导出', tone: 'primary', desc: '文件将保存到下载目录，可用于恢复数据' }).then((ok) => {
       if (!ok) return;
       const payload = { version: 1, exportedAt: new Date().toISOString(), subscriptions: subs };
@@ -1714,14 +1831,14 @@ function init() {
         String(d.getDate()).padStart(2, '0');
       triggerDownload(blob, '订阅成本备份-' + localDate + '.json');
     });
-  });
+  }
 
   // 导入备份：先确认防误触 → 文件选择 → 覆盖前二次确认（预览条数）
-  document.getElementById('btnImport').addEventListener('click', () => {
+  function doImportPick() {
     askConfirm('确定导入备份文件？', { okText: '选择文件', tone: 'primary', desc: '导入后将覆盖当前数据，选择文件后还会再次确认' }).then((ok) => {
       if (ok) document.getElementById('importFile').click();
     });
-  });
+  }
   document.getElementById('importFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1851,20 +1968,41 @@ function init() {
   ['fAmount', 'fPeriod', 'fYears', 'fStart', 'fEnd'].forEach((id) => {
     document.getElementById(id).addEventListener('input', updateLivePreview);
     document.getElementById(id).addEventListener('change', updateLivePreview);
+    document.getElementById(id).addEventListener('input', () => setFieldError(id, ''));
+    document.getElementById(id).addEventListener('change', () => setFieldError(id, ''));
   });
+  document.getElementById('fName').addEventListener('input', () => setFieldError('fName', ''));
 
   // CSV 导出（先确认防误触）
-  document.getElementById('btnExportCSV').addEventListener('click', () => {
+  function doExportCSV() {
     askConfirm('确定导出 CSV 表格？', { okText: '导出', tone: 'primary', desc: 'Excel 可打开，文件将保存到下载目录' }).then((ok) => {
       if (ok) exportCSV();
     });
-  });
+  }
 
   // ICS 续费日历导出（先确认防误触；导入系统日历后由系统负责提醒）
-  document.getElementById('btnExportICS').addEventListener('click', () => {
+  function doExportICS() {
     askConfirm('确定导出续费日历（.ics）？', { okText: '导出', tone: 'primary', desc: '导入手机系统日历后，由系统负责到期提醒' }).then((ok) => {
       if (ok) exportICS();
     });
+  }
+
+  // 更多菜单（顶栏 ⋯）：收纳导入导出
+  const menuActions = { import: doImportPick, 'export-json': doExportJSON, 'export-csv': doExportCSV, 'export-ics': doExportICS };
+  document.getElementById('btnMore').addEventListener('click', () => {
+    document.getElementById('menuDialog').showModal();
+  });
+  document.getElementById('menuDialog').addEventListener('click', (e) => {
+    const item = e.target.closest('button[data-menu]');
+    if (item) {
+      document.getElementById('menuDialog').close();
+      const fn = menuActions[item.dataset.menu];
+      if (fn) fn();
+      return;
+    }
+    if (e.target.id === 'menuCancel' || e.target === document.getElementById('menuDialog')) {
+      document.getElementById('menuDialog').close();
+    }
   });
 
   // 跨标签页同步：另一个页面改了数据，这里自动刷新

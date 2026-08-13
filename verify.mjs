@@ -155,6 +155,9 @@ console.log('▶ 源码结构（防回归）');
 // 历史 bug：subs 曾声明在 init() 内部（局部变量），onSubmit 引用时抛 ReferenceError，点保存无反应
 assert.match(m[1], /let subs = \[\];/);                                        // 顶层声明
 assert.doesNotMatch(m[1], /function init\(\) \{\n\s+let subs = loadSubs\(\)/); // init 内不得再声明
+// 历史 bug：开关「计入统计」保存映射写反（checked=true → active=false → 新订阅默认被划掉）
+assert.match(m[1], /active:\s*f\('fActive'\)\.checked/);          // 勾选=计入统计（正面语义）
+assert.doesNotMatch(m[1], /active:\s*!f\('fActive'\)\.checked/);  // 禁止取反
 
 console.log('▶ 提醒日历：续费事件分布');
 __setSubs([
