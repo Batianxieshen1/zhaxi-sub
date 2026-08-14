@@ -254,18 +254,22 @@
     border-radius: 22px; padding: 0;
     box-shadow: 0 24px 80px rgba(15, 35, 80, .3);
     animation: appleModal .45s cubic-bezier(.34, 1.56, .64, 1) both;
-    max-height: 88vh; overflow-y: auto;
-    flex: 0 0 auto; /* 防 flex 收缩（老内核兼容） */
+    /* 不用 vh 限高：沉浸模式下 WebView 的 vh 计算会异常，压扁面板 */
+    max-height: none; overflow-y: auto;
+    flex: 0 0 auto;
   }
-  /* 移动端：弹窗改绝对定位贴底（不依赖 flex 对齐，WebView 兼容） */
+  /* 矮屏才限高（固定像素基准，不依赖视口单位） */
+  @media (max-height: 700px) {
+    .modal-panel { max-height: 640px; }
+  }
+  /* 移动端：居中弹窗（与桌面一致，不贴底） */
   @media (max-width: 600px) {
-    .modal { display: block; }
+    .modal { display: flex; }
     #subDialog .modal-panel, #menuDialog .modal-panel {
-      position: absolute; left: 0; right: 0; bottom: 0;
-      width: 100%; max-width: 100%;
-      border-radius: 20px 20px 0 0;
-      max-height: 80vh;
-      animation: sheetUp .32s cubic-bezier(.2, .8, .2, 1) both;
+      position: relative; left: auto; right: auto; bottom: auto;
+      width: min(480px, 92vw); max-width: 92vw;
+      border-radius: 22px;
+      animation: appleModal .45s cubic-bezier(.34, 1.56, .64, 1) both;
     }
   }
   @keyframes sheetUp { from { transform: translateY(60%); } to { transform: none; } }
