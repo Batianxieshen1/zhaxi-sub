@@ -237,19 +237,20 @@
   /* 弹窗表单（iOS modal：弹簧缩放进入） */
   /* 弹窗（div 模拟，兼容 WebView 不完整支持 <dialog>） */
   .modal {
-    position: fixed; inset: 0; z-index: 100;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100;
     display: flex; align-items: center; justify-content: center;
   }
   .modal[hidden] { display: none; }
   .modal-mask {
-    position: absolute; inset: 0;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 1;
     background: rgba(0, 0, 0, .35);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
     animation: fadeIn .2s ease both;
   }
   .modal-panel {
-    position: relative; background: #fff;
+    position: relative; z-index: 2; background: #fff;
     border-radius: 22px; padding: 0;
     box-shadow: 0 24px 80px rgba(15, 35, 80, .3);
     animation: appleModal .45s cubic-bezier(.34, 1.56, .64, 1) both;
@@ -288,9 +289,8 @@
   /* Sheet 模式下保存按钮吸底 */
   @media (max-width: 600px) {
     .form-actions {
-      position: sticky; bottom: -24px; margin: 20px -24px -24px;
-      padding: 12px 24px calc(12px + env(safe-area-inset-bottom));
-      background: var(--card); border-top: 1px solid var(--hairline);
+      padding: 12px 0 0;
+      background: #fff; border-top: 1px solid var(--hairline);
     }
   }
 
