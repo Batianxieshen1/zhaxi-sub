@@ -235,26 +235,37 @@
   }
 
   /* 弹窗表单（iOS modal：弹簧缩放进入） */
-  dialog {
-    border: none; border-radius: 22px; padding: 0; width: min(480px, 92vw);
+  /* 弹窗（div 模拟，兼容 WebView 不完整支持 <dialog>） */
+  .modal {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal[hidden] { display: none; }
+  .modal-mask {
+    position: absolute; inset: 0;
+    background: rgba(0, 0, 0, .35);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    animation: fadeIn .2s ease both;
+  }
+  .modal-panel {
+    position: relative; background: #fff;
+    border-radius: 22px; padding: 0;
     box-shadow: 0 24px 80px rgba(15, 35, 80, .3);
     animation: appleModal .45s cubic-bezier(.34, 1.56, .64, 1) both;
+    max-height: 88vh; overflow-y: auto;
   }
-  /* 移动端：底部 Sheet */
+  /* 移动端：添加订阅弹窗变底部 Sheet */
   @media (max-width: 600px) {
-    #subDialog {
-      width: 100%; max-width: 100%; margin: auto 0 0;
-      position: fixed; bottom: 0; left: 0;
+    #subDialog { align-items: flex-end; }
+    #subDialog .modal-panel {
+      width: 100%; max-width: 100%;
       border-radius: 20px 20px 0 0;
-      max-height: 88vh; overflow-y: auto;
       animation: sheetUp .32s cubic-bezier(.2, .8, .2, 1) both;
     }
   }
   @keyframes sheetUp { from { transform: translateY(60%); } to { transform: none; } }
-  dialog::backdrop { background: rgba(0, 0, 0, .35);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes appleModal { from { opacity: 0; transform: scale(.9) translateY(10px); } to { opacity: 1; transform: none; } }
   @keyframes appleIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
   .form-body { padding: 24px; }
@@ -392,7 +403,7 @@
   .empty-sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
 
   /* 通用确认弹窗（苹果风） */
-  #confirmDialog { width: min(300px, 88vw); text-align: center; }
+  #confirmDialog { text-align: center; }
   .confirm-body { padding: 26px 22px 20px; }
   .confirm-icon {
     width: 52px; height: 52px; border-radius: 15px;
@@ -449,12 +460,15 @@
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 
-  /* 更多菜单（底部 Sheet） */
-  .menu-dialog { width: min(320px, 94vw); }
+  /* 各弹窗面板宽度 */
+  #subDialog .modal-panel { width: min(480px, 92vw); }
+  #calDialog .modal-panel { width: min(380px, 94vw); }
+  #confirmDialog .modal-panel { width: min(300px, 88vw); }
+  #menuDialog .modal-panel { width: min(320px, 94vw); }
   @media (max-width: 600px) {
-    .menu-dialog {
-      width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 20px 20px 0 0;
-      position: fixed; bottom: 0; left: 0;
+    #menuDialog { align-items: flex-end; }
+    #menuDialog .modal-panel {
+      width: 100%; max-width: 100%; border-radius: 20px 20px 0 0;
     }
   }
   .menu-body { padding: 10px 14px 18px; }
@@ -533,8 +547,7 @@
     background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
   }
 
-  /* 提醒日历（iOS 日历风格） */
-  .cal-dialog { width: min(380px, 94vw); }
+  /* 续费日历（iOS 日历风格） */
   .cal-body { padding: 20px; }
   .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
   .cal-head h3 { font-size: 17px; font-weight: 700; }
@@ -594,8 +607,9 @@
 </header>
 
 <!-- 更多菜单（底部 Sheet） -->
-<dialog id="menuDialog" class="menu-dialog">
-  <div class="menu-body">
+<div id="menuDialog" class="modal" hidden>
+  <div class="modal-mask" data-modal="menuDialog"></div>
+  <div class="menu-body modal-panel">
     <div class="menu-grabber"></div>
     <h3 class="menu-title">导入与导出</h3>
     <button type="button" data-menu="import"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>导入备份</button>
@@ -604,7 +618,7 @@
     <button type="button" data-menu="export-ics"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>导出续费日历</button>
     <button type="button" id="menuCancel" class="menu-cancel">取消</button>
   </div>
-</dialog>
+</div>
 
 <main>
   <!-- 页面标题 -->
@@ -698,8 +712,9 @@
 </main>
 
 <!-- 添加 / 编辑弹窗 -->
-<dialog id="subDialog">
-  <form id="subForm" class="form-body" novalidate>
+<div id="subDialog" class="modal" hidden>
+  <div class="modal-mask" data-modal="subDialog"></div>
+  <form id="subForm" class="form-body modal-panel">
     <h3 id="dialogTitle">添加订阅</h3>
     <input type="hidden" id="fId">
     <div class="field">
@@ -802,11 +817,12 @@
       <button type="submit" class="primary">保存</button>
     </div>
   </form>
-</dialog>
+</div>
 
 <!-- 提醒日历弹窗 -->
-<dialog id="calDialog" class="cal-dialog">
-  <div class="cal-body">
+<div id="calDialog" class="modal" hidden>
+  <div class="modal-mask" data-modal="calDialog"></div>
+  <div class="cal-body modal-panel">
     <div class="cal-head">
       <h3 id="calTitle"></h3>
       <div class="cal-nav">
@@ -819,11 +835,12 @@
     <div class="cal-events" id="calEvents"></div>
     <div class="cal-close-row"><button type="button" id="calClose" class="cal-btn">关闭</button></div>
   </div>
-</dialog>
+</div>
 
 <!-- 通用确认弹窗（替换原生 confirm） -->
-<dialog id="confirmDialog">
-  <div class="confirm-body">
+<div id="confirmDialog" class="modal" hidden>
+  <div class="modal-mask" data-modal="confirmDialog"></div>
+  <div class="confirm-body modal-panel">
     <div class="confirm-icon" id="confirmIcon"><svg id="confirmIconSvg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div>
     <h3 id="confirmMsg">确定？</h3>
     <p id="confirmDesc" class="confirm-desc" hidden></p>
@@ -832,7 +849,7 @@
       <button type="button" id="confirmOk">确定</button>
     </div>
   </div>
-</dialog>
+</div>
 
 <!-- Toast 提示容器 -->
 <div id="toastBox" class="toast-box"></div>
@@ -1019,6 +1036,16 @@ function toast(msg, type) {
   }, 2400);
 }
 
+// 弹窗开关（div 模拟，兼容 WebView 对 <dialog> 支持不完整）
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.hidden = false;
+}
+function closeModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.hidden = true;
+}
+
 function askConfirm(msg, opts) {
   if (typeof opts === 'string') opts = { okText: opts };
   opts = opts || {};
@@ -1036,17 +1063,17 @@ function askConfirm(msg, opts) {
     desc.textContent = opts.desc || '';
     desc.hidden = !opts.desc;
     const done = (v) => {
-      dlg.close();
+      dlg.hidden = true;
       dlg.removeEventListener('click', onBackdrop);
       document.getElementById('confirmOk').onclick = null;
       document.getElementById('confirmCancel').onclick = null;
       resolve(v);
     };
-    const onBackdrop = (e) => { if (e.target === dlg) done(false); };
+    const onBackdrop = (e) => { if (e.target.closest('.modal-mask')) done(false); };
     document.getElementById('confirmOk').onclick = () => done(true);
     document.getElementById('confirmCancel').onclick = () => done(false);
     dlg.addEventListener('click', onBackdrop);
-    dlg.showModal();
+    dlg.hidden = false;
   });
 }
 
@@ -1351,7 +1378,7 @@ function openCalendar() {
   const t = new Date();
   calSelected = { y: t.getFullYear(), m: t.getMonth(), d: t.getDate() };
   renderCal();
-  document.getElementById('calDialog').showModal();
+  openModal('calDialog');
 }
 
 // 类别单色线性图标（Feather 风格）+ 深色系（与浅色块呼应）
@@ -1726,7 +1753,7 @@ function openDialog(sub) {
   f('yearsField').hidden = (sub ? sub.period : 'yearly') !== 'one_time';
   f('endField').hidden = (sub ? sub.period : 'yearly') !== 'custom';
   f('countField').hidden = (sub ? sub.period : 'yearly') !== 'every_n';
-  f('subDialog').showModal();
+  openModal('subDialog');
   updateLivePreview();
   buildCatChips(); // 刷新类别快捷选择
   f('fName').focus();
@@ -1813,7 +1840,7 @@ function onSubmit(e) {
   }
   saveSubs(subs);
   render();
-  document.getElementById('subDialog').close();
+  closeModal('subDialog');
 }
 
 function init() {
@@ -1990,18 +2017,18 @@ function init() {
   // 更多菜单（顶栏 ⋯）：收纳导入导出
   const menuActions = { import: doImportPick, 'export-json': doExportJSON, 'export-csv': doExportCSV, 'export-ics': doExportICS };
   document.getElementById('btnMore').addEventListener('click', () => {
-    document.getElementById('menuDialog').showModal();
+    openModal('menuDialog');
   });
   document.getElementById('menuDialog').addEventListener('click', (e) => {
     const item = e.target.closest('button[data-menu]');
     if (item) {
-      document.getElementById('menuDialog').close();
+      closeModal('menuDialog');
       const fn = menuActions[item.dataset.menu];
       if (fn) fn();
       return;
     }
-    if (e.target.id === 'menuCancel' || e.target === document.getElementById('menuDialog')) {
-      document.getElementById('menuDialog').close();
+    if (e.target.id === 'menuCancel') {
+      closeModal('menuDialog');
     }
   });
 
@@ -2024,7 +2051,7 @@ function init() {
     renderCal();
   });
   document.getElementById('calClose').addEventListener('click', () => {
-    document.getElementById('calDialog').close();
+    closeModal('calDialog');
   });
   document.getElementById('calGrid').addEventListener('click', (e) => {
     const d = e.target.closest('.cal-day[data-d]');
@@ -2049,7 +2076,7 @@ function init() {
   // 表单提交（新增/保存）
   document.getElementById('subForm').addEventListener('submit', onSubmit);
   document.getElementById('btnCancel').addEventListener('click', () => {
-    document.getElementById('subDialog').close();
+    closeModal('subDialog');
   });
 
   // 表单类别 chips 点击 → 填入输入框
@@ -2078,6 +2105,17 @@ function init() {
     document.getElementById('yearsField').hidden = p !== 'one_time';
     document.getElementById('endField').hidden = p !== 'custom';
     document.getElementById('countField').hidden = p !== 'every_n';
+  });
+
+  // 弹窗遮罩点击关闭（所有 modal）+ ESC 关闭
+  document.addEventListener('click', (e) => {
+    const mask = e.target.closest('.modal-mask[data-modal]');
+    if (mask && mask.dataset.modal !== 'confirmDialog') closeModal(mask.dataset.modal);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal').forEach((m) => { if (!m.hidden) m.hidden = true; });
+    }
   });
 
   // PWA：注册 Service Worker（离线可用；仅 HTTPS/localhost 生效，file:// 下自动跳过）
