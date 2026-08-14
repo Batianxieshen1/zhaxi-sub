@@ -255,13 +255,16 @@
     box-shadow: 0 24px 80px rgba(15, 35, 80, .3);
     animation: appleModal .45s cubic-bezier(.34, 1.56, .64, 1) both;
     max-height: 88vh; overflow-y: auto;
+    flex: 0 0 auto; /* 防 flex 收缩（老内核兼容） */
   }
-  /* 移动端：添加订阅弹窗变底部 Sheet */
+  /* 移动端：弹窗改绝对定位贴底（不依赖 flex 对齐，WebView 兼容） */
   @media (max-width: 600px) {
-    #subDialog { align-items: flex-end; }
-    #subDialog .modal-panel {
+    .modal { display: block; }
+    #subDialog .modal-panel, #menuDialog .modal-panel {
+      position: absolute; left: 0; right: 0; bottom: 0;
       width: 100%; max-width: 100%;
       border-radius: 20px 20px 0 0;
+      max-height: 80vh;
       animation: sheetUp .32s cubic-bezier(.2, .8, .2, 1) both;
     }
   }
