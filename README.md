@@ -65,3 +65,7 @@ git add . && git commit -m "改动说明" && git push
 ## 📄 许可证
 
 [MIT](LICENSE)
+
+---
+
+> 更多作品与札记：**[蓝纸 · 造物与札记](https://batianxieshen1.github.io/blog/)**
