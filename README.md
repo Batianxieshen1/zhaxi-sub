@@ -1,8 +1,26 @@
 # 🌅 Dawn Ledger · 朝夕订阅每日成本
 
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+![PWA](https://img.shields.io/badge/PWA-offline--ready-5A67D8)
+![Zero Dependencies](https://img.shields.io/badge/dependencies-0-success)
+
 > 把年费细算到每一天，提醒每个订阅的到期日 —— 自用的苹果风 PWA 小工具。
 
 在线使用：[https://batianxieshen1.github.io/zhaxi-sub/](https://batianxieshen1.github.io/zhaxi-sub/)
+
+## 界面一览
+
+**财报式成本总览**——每天 / 每月 / 每年三个视角，今天到期的订阅打开页面就提醒：
+
+![成本总览](docs/img/overview.jpg)
+
+**续费日历**——月视图标记每个到期日，点开看当天扣哪几笔；**订阅清单**——每条订阅折算到每天多少钱，续费倒计时一目了然：
+
+| 续费日历 | 订阅清单 |
+| --- | --- |
+| ![续费日历](docs/img/calendar.jpg) | ![订阅清单](docs/img/sublist.jpg) |
+
+> 截图为内置示例数据（每条都标注「示例数据，可删除」）。数据只存在你的浏览器里（localStorage），不上传任何服务器。
 
 ## ✨ 功能特性
 
