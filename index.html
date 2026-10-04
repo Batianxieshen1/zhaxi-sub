@@ -446,9 +446,62 @@
     padding: 10px 20px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
     opacity: 0; transform: translateY(12px) scale(.96);
     transition: opacity .3s cubic-bezier(.2, .8, .2, 1), transform .3s cubic-bezier(.2, .8, .2, 1);
+    display: inline-flex; align-items: center; gap: 8px;
   }
+  .toast.toast-with-undo { pointer-events: auto; padding: 8px 14px 8px 18px; }
+  .toast-undo {
+    background: transparent; border: none; color: #5ac8fa; font-weight: 600;
+    cursor: pointer; padding: 4px 10px; margin-left: 4px; border-radius: 999px;
+    font-size: 13px; transition: background .15s;
+  }
+  .toast-undo:hover { background: rgba(255, 255, 255, .15); }
   .toast.show { opacity: 1; transform: none; }
   .toast.error { background: rgba(255, 59, 48, .95); }
+
+  /* 外币折算标识 */
+  .cur-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--accent); background: rgba(0, 122, 255, .08);
+    border: 1px solid rgba(0, 122, 255, .18); border-radius: 999px;
+    padding: 2px 8px; margin-left: 6px; cursor: pointer; vertical-align: 1px;
+    font-weight: 500; transition: background .15s;
+  }
+  .cur-badge:hover { background: rgba(0, 122, 255, .15); }
+  .conv-sub { font-size: 11px; color: var(--tertiary); font-weight: 400; margin-left: 3px; }
+
+  /* 汇率弹窗表格 */
+  .rates-table-wrap {
+    margin-top: 14px; background: #f8f8fa; border-radius: 12px; padding: 12px;
+    border: 1px solid var(--hairline);
+  }
+  .rates-head { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .rates-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .rate-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    background: #fff; border: 1px solid var(--hairline); border-radius: 8px; padding: 6px 10px;
+  }
+  .rate-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .rate-input {
+    width: 72px; padding: 4px 6px; font-size: 12px; border: 1px solid var(--hairline);
+    border-radius: 6px; text-align: right; font-variant-numeric: tabular-nums;
+  }
+
+  /* 导入弹窗选项 */
+  .import-options { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+  .import-opt {
+    display: flex; flex-direction: column; align-items: flex-start; text-align: left;
+    padding: 14px 16px; border-radius: 14px; border: 1px solid var(--hairline);
+    background: #fff; cursor: pointer; transition: all .2s; width: 100%;
+  }
+  .import-opt:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.06); }
+  .import-opt.primary-tint { border-color: rgba(0, 122, 255, .3); background: #f7faff; }
+  .import-opt.primary-tint:hover { background: #eef5ff; }
+  .import-opt.danger-tint { border-color: rgba(255, 59, 48, .25); }
+  .import-opt.danger-tint:hover { background: #fff5f5; }
+  .import-opt .opt-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .import-opt.primary-tint .opt-title { color: var(--accent); }
+  .import-opt.danger-tint .opt-title { color: var(--danger); }
+  .import-opt .opt-desc { font-size: 12px; color: var(--muted); line-height: 1.4; }
 
   /* 删除行淡出 */
   .sub-item.leaving { opacity: 0; transform: translateX(24px) scale(.98); transition: opacity .25s ease, transform .25s ease; }
@@ -472,6 +525,8 @@
   #calDialog .modal-panel { width: min(380px, 94vw); }
   #confirmDialog .modal-panel { width: min(300px, 88vw); }
   #menuDialog .modal-panel { width: min(320px, 94vw); }
+  #currencyDialog .modal-panel { width: min(420px, 92vw); }
+  #importDialog .modal-panel { width: min(400px, 92vw); }
   @media (max-width: 600px) {
     #menuDialog { align-items: flex-end; }
     #menuDialog .modal-panel {
@@ -618,12 +673,73 @@
   <div class="modal-mask" data-modal="menuDialog"></div>
   <div class="menu-body modal-panel">
     <div class="menu-grabber"></div>
-    <h3 class="menu-title">导入与导出</h3>
+    <h3 class="menu-title">更多操作与设置</h3>
+    <button type="button" data-menu="currency-settings"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="6" x2="12" y2="18"/></svg>基准币种与汇率设置</button>
     <button type="button" data-menu="import"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>导入备份</button>
     <button type="button" data-menu="export-json"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出 JSON 备份</button>
     <button type="button" data-menu="export-csv"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出 CSV 表格</button>
-    <button type="button" data-menu="export-ics"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>导出续费日历</button>
+    <button type="button" data-menu="export-ics"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>导出续费日历（含提醒闹钟）</button>
     <button type="button" id="menuCancel" class="menu-cancel">取消</button>
+  </div>
+</div>
+
+<!-- 汇率与基准币种设置弹窗 -->
+<div id="currencyDialog" class="modal" hidden>
+  <div class="modal-mask" data-modal="currencyDialog"></div>
+  <div class="currency-body modal-panel" style="padding:22px 20px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:17px;font-weight:700;margin:0;">基准币种与汇率设置</h3>
+      <button type="button" id="curClose" class="plain" style="font-size:20px;line-height:1;padding:4px 8px;color:var(--muted);">&times;</button>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label for="fBaseCur">总览结算币种</label>
+      <select id="fBaseCur">
+        <option value="CNY">人民币 (CNY · ¥)</option>
+        <option value="USD">美元 (USD · $)</option>
+        <option value="EUR">欧元 (EUR · €)</option>
+        <option value="HKD">港币 (HKD · HK$)</option>
+        <option value="JPY">日元 (JPY · ¥)</option>
+        <option value="GBP">英镑 (GBP · £)</option>
+        <option value="KRW">韩元 (KRW · ₩)</option>
+      </select>
+      <div class="field-hint">总成本、环形图及日历将以此币种为基准统一汇总</div>
+    </div>
+    <div class="rates-table-wrap">
+      <div class="rates-head" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>参考汇率（相对于 1 人民币 CNY）</span>
+        <span id="rateUpdatedAt" style="font-size:12px;color:var(--muted);font-weight:normal;">更新日期: 2026-10-04</span>
+      </div>
+      <div class="rates-grid" id="ratesGrid"></div>
+    </div>
+    <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <button type="button" id="btnResetRates" class="plain" style="font-size:12px;color:var(--muted);padding:6px 0;">恢复默认汇率</button>
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="btnCancelRates">取消</button>
+        <button type="button" id="btnSaveRates" class="primary">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 导入方式选择弹窗 -->
+<div id="importDialog" class="modal" hidden>
+  <div class="modal-mask" data-modal="importDialog"></div>
+  <div class="import-body modal-panel" style="padding:22px 20px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <h3 style="font-size:17px;font-weight:700;margin:0;">选择导入方式</h3>
+      <button type="button" id="importClose" class="plain" style="font-size:20px;line-height:1;padding:4px 8px;color:var(--muted);">&times;</button>
+    </div>
+    <p id="importSummary" style="font-size:13px;color:var(--muted);margin:8px 0 16px;"></p>
+    <div class="import-options">
+      <button type="button" id="btnImportMerge" class="import-opt primary-tint">
+        <div class="opt-title">合并导入（多设备同步推荐）</div>
+        <div class="opt-desc">保留当前设备已有数据，增补新订阅并自动合并重复项，不会遗失现有记录。</div>
+      </button>
+      <button type="button" id="btnImportOverwrite" class="import-opt danger-tint">
+        <div class="opt-title">覆盖导入</div>
+        <div class="opt-desc">清空当前设备上的全部数据，完全替换为文件中的内容（操作不可撤销）。</div>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -654,6 +770,7 @@
       <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>每天摊销</div>
       <div class="value" id="totalDaily"><span class="cur">¥</span><span class="num">0.00</span></div>
       <div class="hint" id="dailyHint">所有订阅平摊到每天</div>
+      <div style="margin-top:2px;"><span id="curBadge" class="cur-badge" hidden title="含有外币订阅，已按汇率统一折算">含外币折算 ⚙️</span></div>
     </div>
     <div class="card">
       <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每月摊销</div>
@@ -735,6 +852,7 @@
           <option value="yearly">按年</option>
           <option value="monthly">按月</option>
           <option value="weekly">按周</option>
+          <option value="daily">按天</option>
           <option value="quarterly">按季</option>
           <option value="half_yearly">按半年</option>
           <option value="every_n">每 N 个月</option>
@@ -891,14 +1009,103 @@ function uid() {
     'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 }
 
-const PERIODS = ['yearly', 'monthly', 'weekly', 'quarterly', 'half_yearly', 'every_n', 'one_time', 'custom'];
+const PERIODS = ['daily', 'yearly', 'monthly', 'weekly', 'quarterly', 'half_yearly', 'every_n', 'one_time', 'custom'];
 const CURRENCIES = ['CNY', 'USD', 'EUR', 'GBP', 'JPY', 'HKD', 'KRW'];
 const CURRENCY_SYMBOLS = { CNY: '¥', USD: '$', EUR: '€', GBP: '£', JPY: '¥', HKD: 'HK$', KRW: '₩' };
+
+// 默认参考汇率（相对于 1 CNY，含更新日期）
+const DEFAULT_RATES = {
+  updatedAt: '2026-10-04',
+  CNY: 1,
+  USD: 7.25,
+  EUR: 7.85,
+  GBP: 9.20,
+  JPY: 0.048,
+  HKD: 0.93,
+  KRW: 0.0053,
+};
+const SETTINGS_KEY = 'sub-cost-settings:v1';
+let userSettings = { baseCurrency: 'CNY', rates: { ...DEFAULT_RATES } };
+
+function loadSettings() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          const base = CURRENCIES.includes(parsed.baseCurrency) ? parsed.baseCurrency : 'CNY';
+          const rates = { ...DEFAULT_RATES, ...(parsed.rates || {}) };
+          for (const k in rates) {
+            if (k === 'updatedAt') continue;
+            rates[k] = Number(rates[k]) > 0 ? Number(rates[k]) : (DEFAULT_RATES[k] || 1);
+          }
+          if (!rates.updatedAt) rates.updatedAt = DEFAULT_RATES.updatedAt;
+          return { baseCurrency: base, rates };
+        }
+      }
+    }
+  } catch (e) {}
+  return { baseCurrency: 'CNY', rates: { ...DEFAULT_RATES } };
+}
+
+function saveSettings(s) {
+  userSettings = s;
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  }
+}
+
+function getBaseCurrency() {
+  return (userSettings && userSettings.baseCurrency) || 'CNY';
+}
+
+function getRates() {
+  return (userSettings && userSettings.rates) || DEFAULT_RATES;
+}
+
+// 金额折算：从 fromCur 折算到 toCur（默认折算到基准币种）
+function toBaseCurrency(amount, fromCur, toCur) {
+  const num = Number(amount) || 0;
+  if (!fromCur) fromCur = 'CNY';
+  if (!toCur) toCur = getBaseCurrency();
+  if (fromCur === toCur) return num;
+  const rates = getRates();
+  const rateFrom = Number(rates[fromCur]) || 1;
+  const rateTo = Number(rates[toCur]) || 1;
+  return (num * rateFrom) / rateTo;
+}
+
+function hasForeignCurrencies(list) {
+  const baseCur = getBaseCurrency();
+  return (list || []).some((s) => s && s.active !== false && s.currency && s.currency !== baseCur);
+}
+
+// 合并备份数据：按 ID 去重，字段清洗规范化，保留既有数据并增补/更新
+function mergeSubs(existing, incoming) {
+  const map = new Map();
+  const safeExisting = Array.isArray(existing) ? existing.map((s, i) => normalizeSub(s, i)) : [];
+  for (const s of safeExisting) map.set(s.id, s);
+  let added = 0, updated = 0;
+  const safeIncoming = Array.isArray(incoming) ? incoming : [];
+  for (let i = 0; i < safeIncoming.length; i++) {
+    const norm = normalizeSub(safeIncoming[i], i);
+    if (map.has(norm.id)) {
+      map.set(norm.id, norm);
+      updated++;
+    } else {
+      map.set(norm.id, norm);
+      added++;
+    }
+  }
+  return { list: Array.from(map.values()), added, updated };
+}
 
 // 常规计费周期 → { unit, count }（一次性/自定义 → null）
 // 周/季/半年/每N月由 unit+count 表达：monthly={month,1}、quarterly={month,3}、every_n={month,N}
 function unitInfo(sub) {
   switch (sub.period) {
+    case 'daily': return { unit: 'day', count: 1 };
     case 'yearly': return { unit: 'year', count: 1 };
     case 'monthly': return { unit: 'month', count: 1 };
     case 'weekly': return { unit: 'week', count: 1 };
@@ -913,19 +1120,19 @@ function unitInfo(sub) {
 function normalizeSub(s, idx) {
   const amount = Number(s && s.amount);
   return {
-    id: s && typeof s.id === 'string' && s.id ? s.id : 'imp-' + idx + '-' + uid(),
+    id: s && typeof s.id === 'string' && s.id.trim() ? s.id.trim() : 'imp-' + (idx !== undefined ? idx : 0) + '-' + uid(),
     name: (s && s.name ? String(s.name) : '').trim() || '未命名',
     category: (s && s.category ? String(s.category) : '').trim(),
     period: s && PERIODS.includes(s.period) ? s.period : 'yearly',
     amount: isNaN(amount) || amount < 0 ? 0 : amount,
     years: s && s.period === 'one_time' ? (Number(s.years) || 0) : null,
-    start: s && typeof s.start === 'string' ? s.start : '',
-    end: s && typeof s.end === 'string' ? s.end : '',
-    note: s && s.note ? String(s.note) : '',
+    start: s && typeof s.start === 'string' ? s.start.trim() : '',
+    end: s && typeof s.end === 'string' ? s.end.trim() : '',
+    note: s && s.note ? String(s.note).trim() : '',
     currency: s && CURRENCIES.includes(s.currency) ? s.currency : 'CNY',
     count: s && s.period === 'every_n' ? Math.max(1, Math.round(Number(s.count) || 1)) : null,
-    trialEnd: s && typeof s.trialEnd === 'string' ? s.trialEnd : '',
-    cancelAt: s && typeof s.cancelAt === 'string' ? s.cancelAt : '',
+    trialEnd: s && typeof s.trialEnd === 'string' ? s.trialEnd.trim() : '',
+    cancelAt: s && typeof s.cancelAt === 'string' ? s.cancelAt.trim() : '',
     active: !(s && s.active === false),
   };
 }
@@ -936,7 +1143,7 @@ function loadSubs() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw !== null) {
       const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : [];
+      return Array.isArray(arr) ? arr.map((s, i) => normalizeSub(s, i)) : [];
     }
   } catch (e) { /* 数据损坏则重置 */ }
   saveSubs(DEFAULT_DATA.map(normalizeSub));
@@ -986,21 +1193,27 @@ function calcCosts(sub) {
   };
 }
 
-// 汇总：总成本 + 按类别小计
-function summarize(list) {
+// 汇总：总成本 + 按类别小计（统一折算为基准币种）
+function summarize(list, targetCurrency) {
+  const baseCur = targetCurrency || getBaseCurrency();
   const total = { yearly: 0, monthly: 0, daily: 0 };
   const byCategory = {};
   for (const sub of list) {
     if (sub.active === false) continue; // 已取消的订阅不计入统计
     const c = calcCosts(sub);
-    total.yearly += c.yearly;
-    total.monthly += c.monthly;
-    total.daily += c.daily;
+    const cur = sub.currency || 'CNY';
+    const yearlyInBase = toBaseCurrency(c.yearly, cur, baseCur);
+    const monthlyInBase = toBaseCurrency(c.monthly, cur, baseCur);
+    const dailyInBase = toBaseCurrency(c.daily, cur, baseCur);
+
+    total.yearly += yearlyInBase;
+    total.monthly += monthlyInBase;
+    total.daily += dailyInBase;
     const cat = (sub.category || '').trim() || '其他';
     if (!byCategory[cat]) byCategory[cat] = { yearly: 0, monthly: 0, daily: 0, count: 0 };
-    byCategory[cat].yearly += c.yearly;
-    byCategory[cat].monthly += c.monthly;
-    byCategory[cat].daily += c.daily;
+    byCategory[cat].yearly += yearlyInBase;
+    byCategory[cat].monthly += monthlyInBase;
+    byCategory[cat].daily += dailyInBase;
     byCategory[cat].count += 1;
   }
   return { total, byCategory };
@@ -1041,6 +1254,29 @@ function toast(msg, type) {
     t.classList.remove('show');
     setTimeout(() => t.remove(), 320);
   }, 2400);
+}
+
+function toastWithUndo(msg, onUndo, dur) {
+  const box = document.getElementById('toastBox');
+  const t = document.createElement('div');
+  t.className = 'toast toast-with-undo';
+  t.innerHTML = '<span>' + esc(msg) + '</span><button type="button" class="toast-undo">撤销</button>';
+  let undone = false;
+  t.querySelector('.toast-undo').addEventListener('click', () => {
+    if (undone) return;
+    undone = true;
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+    if (typeof onUndo === 'function') onUndo();
+  });
+  box.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => {
+    if (!undone) {
+      t.classList.remove('show');
+      setTimeout(() => t.remove(), 320);
+    }
+  }, dur || 5000);
 }
 
 // 弹窗开关（div 模拟，兼容 WebView 对 <dialog> 支持不完整）
@@ -1150,8 +1386,7 @@ function exportCSV() {
     String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') + '.csv');
 }
 
-// ICS 续费日历导出：为每个活跃订阅生成未来 2 年的续费事件（RRULE）
-// 导入系统日历后，由系统日历负责 30/7/1 天前提醒 —— 比网页推送可靠，无需后端
+// ICS 续费日历导出：为每个活跃订阅生成未来 2 年的续费事件（RRULE）并包含提前1天提醒闹钟（VALARM）
 function exportICS() {
   const icsEsc = (s) => String(s ?? '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
   const fmtDate = (d) => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
@@ -1174,13 +1409,19 @@ function exportICS() {
     lines.push('DTSTART;VALUE=DATE:' + fmtDate(next));
     lines.push('RRULE:FREQ=' + freq + ';INTERVAL=' + info.count + ';UNTIL=' + fmtDate(until));
     lines.push('SUMMARY:' + icsEsc(s.name + ' · 续费 ' + fmtMoney(s.amount, s.currency)));
+    lines.push('DESCRIPTION:' + icsEsc('订阅「' + s.name + '」续费提醒，金额：' + fmtMoney(s.amount, s.currency) + (s.note ? ' (' + s.note + ')' : '')));
+    lines.push('BEGIN:VALARM');
+    lines.push('ACTION:DISPLAY');
+    lines.push('DESCRIPTION:' + icsEsc('明天「' + s.name + '」续费 ' + fmtMoney(s.amount, s.currency)));
+    lines.push('TRIGGER:-P1D');
+    lines.push('END:VALARM');
     lines.push('END:VEVENT');
     count++;
   }
   lines.push('END:VCALENDAR');
-  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
   triggerDownload(blob, '朝夕-续费日历.ics',
-    count ? '已导出 ' + count + ' 个订阅的续费日历，导入系统日历即可获得提醒' : '');
+    count ? '已导出 ' + count + ' 个订阅的续费日历（含提前1天到期提醒闹钟），导入系统日历即可生效' : '');
 }
 
 // 弹窗内实时预览：边填边算
@@ -1262,10 +1503,14 @@ let calSelected = null; // 选中的日期 { y, m, d }
 
 // 某月有续费事件的日期 → { day: [订阅...] }
 // 只标记开始日期之后（含开始日）的续费日；开始前的月份不再误标；一次性/自定义无续费日
+// 某月有续费事件的日期 → { day: [订阅...] }
+// 只标记开始日期之后（含开始日）的续费日；开始前的月份不标；超过 cancelAt 的不标
 function calEventsForMonth(y, m) {
   const map = {};
   const lastDay = daysInMonth(y, m);
-  const monthEnd = new Date(y, m, lastDay);
+  const monthStart = new Date(y, m, 1);
+  const monthEnd = new Date(y, m, lastDay, 23, 59, 59, 999);
+
   for (const s of subs) {
     if (s.active === false) continue; // 已取消的不提示
     if (!s.start) continue;
@@ -1274,16 +1519,62 @@ function calEventsForMonth(y, m) {
     const start = new Date(s.start + 'T00:00:00');
     if (isNaN(start)) continue;
     if (start > monthEnd) continue; // 开始日期晚于本月 → 无事件
-    let k = 0, guard = 0;
-    while (guard++ < 500) {
+
+    const cancelDate = s.cancelAt ? new Date(s.cancelAt + 'T23:59:59') : null;
+    if (cancelDate && cancelDate < monthStart) continue; // 服务在当月之前已截止
+
+    const { unit, count } = info;
+    if (unit === 'month') {
+      const totalMonths = (y - start.getFullYear()) * 12 + (m - start.getMonth());
+      if (totalMonths < 0) continue;
+      if (totalMonths % count !== 0) continue;
+      const k = totalMonths / count;
       const d = kthRenewalDate(s, k);
-      if (!d) break;
-      const dy = d.getFullYear(), dm = d.getMonth();
-      if (dy > y || (dy === y && dm > m)) break;
-      if (dy === y && dm === m) {
-        (map[d.getDate()] = map[d.getDate()] || []).push(s);
+      if (d && d.getFullYear() === y && d.getMonth() === m) {
+        if (!cancelDate || d <= cancelDate) {
+          (map[d.getDate()] = map[d.getDate()] || []).push(s);
+        }
       }
-      k++;
+    } else if (unit === 'year') {
+      const yearDiff = y - start.getFullYear();
+      if (yearDiff < 0) continue;
+      if (yearDiff % count !== 0) continue;
+      if (start.getMonth() !== m) continue;
+      const k = yearDiff / count;
+      const d = kthRenewalDate(s, k);
+      if (d && d.getFullYear() === y && d.getMonth() === m) {
+        if (!cancelDate || d <= cancelDate) {
+          (map[d.getDate()] = map[d.getDate()] || []).push(s);
+        }
+      }
+    } else if (unit === 'week') {
+      const msPerWeek = 7 * count * 86400000;
+      const diffToMonthStart = monthStart.getTime() - start.getTime();
+      let k = Math.max(0, Math.floor(diffToMonthStart / msPerWeek));
+      let guard = 0;
+      while (guard++ < 100) {
+        const d = kthRenewalDate(s, k);
+        if (!d || d > monthEnd) break;
+        if (cancelDate && d > cancelDate) break;
+        if (d >= monthStart && d.getFullYear() === y && d.getMonth() === m) {
+          (map[d.getDate()] = map[d.getDate()] || []).push(s);
+        }
+        k++;
+      }
+    } else if (unit === 'day') {
+      const msPerDay = count * 86400000;
+      const diffToMonthStart = monthStart.getTime() - start.getTime();
+      let k = Math.max(0, Math.floor(diffToMonthStart / msPerDay));
+      let guard = 0;
+      while (guard++ < 200) {
+        const d = kthRenewalDate(s, k);
+        if (!d || d > monthEnd) break;
+        if (cancelDate && d > cancelDate) break;
+        if (d >= monthStart && d.getFullYear() === y && d.getMonth() === m) {
+          (map[d.getDate()] = map[d.getDate()] || []).push(s);
+        }
+        k++;
+      }
     }
   }
   return map;
@@ -1295,18 +1586,44 @@ function upcomingCharges(days) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const end = new Date(today.getTime() + days * 86400000);
+  end.setHours(23, 59, 59, 999);
+
   for (const s of subs) {
     if (s.active === false) continue;
+    if (!s.start) continue;
     const info = unitInfo(s);
-    if (!info || !s.start) continue;
+    if (!info) continue;
     const start = new Date(s.start + 'T00:00:00');
     if (isNaN(start)) continue;
-    let k = 0, guard = 0;
-    while (guard++ < 5000) {
+    if (start > end) continue;
+
+    const cancelDate = s.cancelAt ? new Date(s.cancelAt + 'T23:59:59') : null;
+    if (cancelDate && cancelDate < today) continue;
+
+    const { unit, count } = info;
+    let k = 0;
+    if (unit === 'month') {
+      const monthDiff = (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth());
+      k = Math.max(0, Math.floor(monthDiff / count));
+    } else if (unit === 'year') {
+      const yearDiff = today.getFullYear() - start.getFullYear();
+      k = Math.max(0, Math.floor(yearDiff / count));
+    } else if (unit === 'week') {
+      const msPerWeek = 7 * count * 86400000;
+      k = Math.max(0, Math.floor((today.getTime() - start.getTime()) / msPerWeek));
+    } else if (unit === 'day') {
+      const msPerDay = count * 86400000;
+      k = Math.max(0, Math.floor((today.getTime() - start.getTime()) / msPerDay));
+    }
+
+    let guard = 0;
+    while (guard++ < 1000) {
       const d = kthRenewalDate(s, k);
-      if (!d) break;
-      if (d > end) break;
-      if (d >= today) out.push({ date: d, sub: s });
+      if (!d || d > end) break;
+      if (cancelDate && d > cancelDate) break;
+      if (d >= today) {
+        out.push({ date: d, sub: s });
+      }
       k++;
     }
   }
@@ -1354,12 +1671,15 @@ function renderCal() {
   }
   document.getElementById('calGrid').innerHTML = html;
 
-  // 本月预计支出合计（当月所有到期订阅的应付金额）
+  // 本月预计支出合计（当月所有到期订阅的应付金额，统一折算到基准币种）
+  const baseCur = getBaseCurrency();
   let monthTotal = 0;
   for (const day in events) {
-    for (const s of events[day]) monthTotal += Number(s.amount) || 0;
+    for (const s of events[day]) {
+      monthTotal += toBaseCurrency(Number(s.amount) || 0, s.currency, baseCur);
+    }
   }
-  document.getElementById('calTotal').textContent = '本月预计扣款：' + fmtMoney(monthTotal, majorityCurrency(subs));
+  document.getElementById('calTotal').textContent = '本月预计扣款：' + fmtMoney(monthTotal, baseCur);
 
   // 选中日期的事件列表（续费 + 试用/截止）
   const selEvents = calSelected ? events[calSelected.d] : null;
@@ -1424,6 +1744,7 @@ function esc(s) {
 function periodText(sub) {
   const amt = fmtMoney(sub.amount, sub.currency);
   switch (sub.period) {
+    case 'daily': return amt + '/天';
     case 'yearly': return amt + '/年';
     case 'monthly': return amt + '/月';
     case 'weekly': return amt + '/周';
@@ -1453,11 +1774,43 @@ function nextRenewalDate(sub, now) {
   if (!unitInfo(sub)) return null;
   const t = now ? new Date(now) : new Date();
   const today = new Date(t.getFullYear(), t.getMonth(), t.getDate());
-  let k = 0, guard = 0;
-  while (guard++ < 20000) {
+  const s = new Date(sub.start + 'T00:00:00');
+  if (isNaN(s)) return null;
+
+  const cancelDate = sub.cancelAt ? new Date(sub.cancelAt + 'T23:59:59') : null;
+  if (cancelDate && today > cancelDate) return null;
+
+  const info = unitInfo(sub);
+  const { unit, count } = info;
+
+  if (s >= today) {
+    if (cancelDate && s > cancelDate) return null;
+    return s;
+  }
+
+  let k = 0;
+  if (unit === 'month') {
+    const monthDiff = (today.getFullYear() - s.getFullYear()) * 12 + (today.getMonth() - s.getMonth());
+    k = Math.max(0, Math.floor(monthDiff / count));
+  } else if (unit === 'year') {
+    const yearDiff = today.getFullYear() - s.getFullYear();
+    k = Math.max(0, Math.floor(yearDiff / count));
+  } else if (unit === 'week') {
+    const msPerWeek = 7 * count * 86400000;
+    k = Math.max(0, Math.floor((today.getTime() - s.getTime()) / msPerWeek));
+  } else if (unit === 'day') {
+    const msPerDay = count * 86400000;
+    k = Math.max(0, Math.floor((today.getTime() - s.getTime()) / msPerDay));
+  }
+
+  let guard = 0;
+  while (guard++ < 20) {
     const d = kthRenewalDate(sub, k);
     if (!d) return null;
-    if (d >= today) return d;
+    if (d >= today) {
+      if (cancelDate && d > cancelDate) return null;
+      return d;
+    }
     k++;
   }
   return null;
@@ -1480,6 +1833,12 @@ function kthRenewalDate(sub, k) {
   if (unit === 'year') {
     const y = s.getFullYear() + k * count;
     return new Date(y, s.getMonth(), Math.min(s.getDate(), daysInMonth(y, s.getMonth())));
+  }
+  if (unit === 'week') {
+    return new Date(s.getFullYear(), s.getMonth(), s.getDate() + k * 7 * count);
+  }
+  if (unit === 'day') {
+    return new Date(s.getFullYear(), s.getMonth(), s.getDate() + k * count);
   }
   const ms = (unit === 'week' ? 7 : 1) * count * 86400000;
   return new Date(s.getTime() + k * ms);
@@ -1609,11 +1968,12 @@ function dailyAnalogy(daily) {
 // 未来扣款清单渲染
 let upcomingDays = 30;
 function renderUpcoming() {
+  const baseCur = getBaseCurrency();
   const events = upcomingCharges(upcomingDays);
-  const total = events.reduce((s, e) => s + (Number(e.sub.amount) || 0), 0);
+  const total = events.reduce((s, e) => s + toBaseCurrency(Number(e.sub.amount) || 0, e.sub.currency, baseCur), 0);
   document.getElementById('upcomingTotal').innerHTML =
     events.length
-      ? '未来 <b>' + upcomingDays + ' 天</b> 预计扣款 <b>' + fmtMoney(total, majorityCurrency(subs)) + '</b> · 共 ' + events.length + ' 笔'
+      ? '未来 <b>' + upcomingDays + ' 天</b> 预计扣款 <b>' + fmtMoney(total, baseCur) + '</b> · 共 ' + events.length + ' 笔'
       : '未来 ' + upcomingDays + ' 天没有订阅扣款';
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1650,25 +2010,31 @@ function syncNativeNotifications() {
 
 // 核心渲染：总览三卡片 + 类别汇总 + 订阅列表
 function render() {
+  userSettings = loadSettings();
   subs = loadSubs(); // 同步全局数据源：本地/跨标签页改动都从这里刷新
-  const { total, byCategory } = summarize(subs);
+  const baseCur = getBaseCurrency();
+  const { total, byCategory } = summarize(subs, baseCur);
 
   // ① 总览三卡片（每天 / 每月 / 每年摊销）
   animateValue(document.getElementById('totalDaily'), total.daily);
   animateValue(document.getElementById('totalMonthly'), total.monthly);
   animateValue(document.getElementById('totalYearly'), total.yearly);
-  // 币种符号随数据动态变化（混币种取最多的币种）
-  const curSym = CURRENCY_SYMBOLS[majorityCurrency(subs)] || '¥';
+  const curSym = CURRENCY_SYMBOLS[baseCur] || '¥';
   document.querySelectorAll('.overview .cur').forEach((el) => { el.textContent = curSym; });
   document.getElementById('dailyHint').textContent = subs.length
     ? '共 ' + subs.length + ' 笔订阅' + (total.daily > 0 ? ' · ' + dailyAnalogy(total.daily) : '')
     : '所有订阅平摊到每天';
 
+  const badge = document.getElementById('curBadge');
+  if (badge) {
+    badge.hidden = !hasForeignCurrencies(subs);
+  }
+
   // ② 类别汇总（chips）
   const cats = Object.entries(byCategory).sort((a, b) => b[1].monthly - a[1].monthly);
   document.getElementById('byCategory').innerHTML = cats.map(([name, c]) =>
     '<span class="chip">' + catIcon(name) + ' ' + esc(name) + ' <b>' +
-    fmtMoney(c.monthly, majorityCurrency(subs)) + '/月</b> · ' + fmtMoney(c.daily, majorityCurrency(subs)) + '/天 ×' + c.count + '</span>'
+    fmtMoney(c.monthly, baseCur) + '/月</b> · ' + fmtMoney(c.daily, baseCur) + '/天 ×' + c.count + '</span>'
   ).join('');
 
   // ③ 订阅列表
@@ -1687,6 +2053,7 @@ function render() {
     if (sub.trialEnd && new Date(sub.trialEnd + 'T00:00:00') >= _today) life.push('试用至 ' + sub.trialEnd);
     if (sub.cancelAt) life.push('服务至 ' + sub.cancelAt);
     const meta = [inactive ? '已取消' : '', periodText(sub), renewalText(sub)].concat(life).concat([sub.note]).filter(Boolean).join(' · ');
+
     return (
       '<li class="sub-item' + (inactive ? ' inactive' : '') + (batchMode && batchSel.has(sub.id) ? ' batch-selected' : '') + '" data-id="' + esc(sub.id) + '">' +
         selMark +
@@ -1873,6 +2240,7 @@ function init() {
       if (ok) document.getElementById('importFile').click();
     });
   }
+  let pendingImportList = null;
   document.getElementById('importFile').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1889,17 +2257,41 @@ function init() {
         e.target.value = '';
         return;
       }
-      // 覆盖前确认（预览条数）
-      askConfirm('导入将覆盖当前 ' + subs.length + ' 条数据为文件中的 ' + arr.length + ' 条。此操作不可撤销，确定覆盖？', { okText: '覆盖导入' })
-        .then((ok) => {
-          if (!ok) return;
-          saveSubs(arr.map(normalizeSub));
-          render();
-          toast('导入成功，共 ' + arr.length + ' 条');
-        });
+      pendingImportList = arr;
+      document.getElementById('importSummary').textContent =
+        '备份文件中含有 ' + arr.length + ' 条订阅记录（当前设备已有 ' + subs.length + ' 条）。请选择导入方式：';
+      openModal('importDialog');
       e.target.value = '';
     };
     reader.readAsText(file);
+  });
+
+  document.getElementById('btnImportMerge').addEventListener('click', () => {
+    if (!pendingImportList) return;
+    const res = mergeSubs(subs, pendingImportList);
+    saveSubs(res.list);
+    render();
+    closeModal('importDialog');
+    toast('合并导入成功：新增 ' + res.added + ' 条，更新 ' + res.updated + ' 条，当前共 ' + res.list.length + ' 条');
+    pendingImportList = null;
+  });
+
+  document.getElementById('btnImportOverwrite').addEventListener('click', () => {
+    if (!pendingImportList) return;
+    closeModal('importDialog');
+    askConfirm('确定覆盖当前 ' + subs.length + ' 条数据为文件中的 ' + pendingImportList.length + ' 条？此操作不可撤销！', { okText: '覆盖导入' })
+      .then((ok) => {
+        if (!ok) return;
+        saveSubs(pendingImportList.map(normalizeSub));
+        render();
+        toast('导入成功，共 ' + pendingImportList.length + ' 条');
+        pendingImportList = null;
+      });
+  });
+
+  document.getElementById('importClose').addEventListener('click', () => {
+    closeModal('importDialog');
+    pendingImportList = null;
   });
 
   // 排序：分段控件
@@ -1937,10 +2329,18 @@ function init() {
     if (btn && btn.dataset.action === 'del') {
       askConfirm('确定删除「' + sub.name + '」？', { okText: '删除' }).then((ok) => {
         if (!ok) return;
+        const subIndex = subs.findIndex((s) => s.id === id);
+        const deletedSub = sub;
         const remove = () => {
           subs = subs.filter((s) => s.id !== id);
           saveSubs(subs);
           render();
+          toastWithUndo('已删除「' + deletedSub.name + '」', () => {
+            subs.splice(Math.min(subIndex, subs.length), 0, deletedSub);
+            saveSubs(subs);
+            render();
+            toast('已恢复「' + deletedSub.name + '」');
+          });
         };
         if (row) {
           row.classList.add('leaving'); // 先淡出再删
@@ -2021,8 +2421,69 @@ function init() {
     });
   }
 
+  // 汇率与基准币种设置弹窗
+  function openCurrencyDialog() {
+    userSettings = loadSettings();
+    const fCur = document.getElementById('fBaseCur');
+    if (fCur) fCur.value = getBaseCurrency();
+    const rates = getRates();
+    const dateEl = document.getElementById('rateUpdatedAt');
+    if (dateEl) {
+      dateEl.textContent = '更新日期: ' + (rates.updatedAt || DEFAULT_RATES.updatedAt);
+    }
+    const grid = document.getElementById('ratesGrid');
+    if (grid) {
+      const foreign = CURRENCIES.filter((c) => c !== 'CNY');
+      grid.innerHTML = foreign.map((c) =>
+        '<div class="rate-row">' +
+          '<span class="rate-label">' + c + ' (' + (CURRENCY_SYMBOLS[c] || '') + ')</span>' +
+          '<input type="number" step="0.0001" min="0.0001" class="rate-input" data-cur="' + c + '" value="' + (rates[c] || DEFAULT_RATES[c] || 1) + '">' +
+        '</div>'
+      ).join('');
+    }
+    openModal('currencyDialog');
+  }
+
+  document.getElementById('curClose').addEventListener('click', () => closeModal('currencyDialog'));
+  document.getElementById('btnCancelRates').addEventListener('click', () => closeModal('currencyDialog'));
+  const curBadgeEl = document.getElementById('curBadge');
+  if (curBadgeEl) curBadgeEl.addEventListener('click', openCurrencyDialog);
+
+  document.getElementById('btnResetRates').addEventListener('click', () => {
+    const grid = document.getElementById('ratesGrid');
+    if (!grid) return;
+    grid.querySelectorAll('.rate-input').forEach((inp) => {
+      const c = inp.dataset.cur;
+      if (DEFAULT_RATES[c]) inp.value = DEFAULT_RATES[c];
+    });
+    const dateEl = document.getElementById('rateUpdatedAt');
+    if (dateEl) dateEl.textContent = '更新日期: ' + DEFAULT_RATES.updatedAt;
+  });
+
+  document.getElementById('btnSaveRates').addEventListener('click', () => {
+    const base = document.getElementById('fBaseCur').value;
+    const nowD = new Date();
+    const todayStr = nowD.getFullYear() + '-' + String(nowD.getMonth() + 1).padStart(2, '0') + '-' + String(nowD.getDate()).padStart(2, '0');
+    const rates = { CNY: 1, updatedAt: todayStr };
+    document.querySelectorAll('.rate-input').forEach((inp) => {
+      const c = inp.dataset.cur;
+      const v = parseFloat(inp.value);
+      rates[c] = v > 0 ? v : (DEFAULT_RATES[c] || 1);
+    });
+    saveSettings({ baseCurrency: base, rates });
+    render();
+    closeModal('currencyDialog');
+    toast('已保存基准币种与汇率设置');
+  });
+
   // 更多菜单（顶栏 ⋯）：收纳导入导出
-  const menuActions = { import: doImportPick, 'export-json': doExportJSON, 'export-csv': doExportCSV, 'export-ics': doExportICS };
+  const menuActions = {
+    'currency-settings': openCurrencyDialog,
+    import: doImportPick,
+    'export-json': doExportJSON,
+    'export-csv': doExportCSV,
+    'export-ics': doExportICS
+  };
   document.getElementById('btnMore').addEventListener('click', () => {
     openModal('menuDialog');
   });

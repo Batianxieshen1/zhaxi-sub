@@ -27,10 +27,10 @@ const ctx = {
 vm.createContext(ctx);
 // 追加一行导出：const 声明的词法绑定不会自动挂到 context 上，需在沙箱内显式导出
 vm.runInContext(
-  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, __setSubs: (l) => { subs = l; }, DEFAULT_DATA };',
+  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA };',
   ctx
 );
-const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, __setSubs, DEFAULT_DATA } = ctx.__exports;
+const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA } = ctx.__exports;
 
 function approx(actual, expected, eps = 1e-9) {
   assert.ok(Math.abs(actual - expected) < eps,
@@ -312,5 +312,122 @@ ends = calEndEventsForMonth(2026, 9); // 10 月：服务截止
 assert.ok(ends[15] && ends[15][0].sub.id === 't2' && ends[15][0].label === '服务截止');
 ends = calEndEventsForMonth(2026, 7); // 8 月：无
 assert.equal(Object.keys(ends).length, 0);
+
+console.log('▶ 多币种汇率折算与基准汇总');
+approx(toBaseCurrency(10, 'USD', 'CNY'), 72.5); // 10 * 7.25 = 72.5
+approx(toBaseCurrency(1000, 'JPY', 'CNY'), 48); // 1000 * 0.048 = 48
+approx(toBaseCurrency(100, 'CNY', 'CNY'), 100);
+const multiSubs = [
+  { id: 'us1', name: 'Netflix US', period: 'monthly', amount: 10, currency: 'USD' }, // 10 * 12 * 7.25 = 870 CNY/year
+  { id: 'cn1', name: 'iCloud CN', period: 'yearly', amount: 68, currency: 'CNY' },  // 68 CNY/year
+];
+const multiSum = summarize(multiSubs, 'CNY');
+approx(multiSum.total.yearly, 870 + 68);
+approx(multiSum.total.monthly, (870 + 68) / 12);
+approx(multiSum.total.daily, (870 + 68) / 365);
+assert.equal(hasForeignCurrencies(multiSubs), true);
+assert.equal(hasForeignCurrencies([{ currency: 'CNY' }]), false);
+
+console.log('▶ 改进1：汇率表更新日期与币种显示口径分离');
+const ratesObj = getRates();
+assert.ok(ratesObj.updatedAt, '汇率表必须包含更新日期字段 updatedAt');
+assert.match(ratesObj.updatedAt, /^\d{4}-\d{2}-\d{2}$/, 'updatedAt 必须为 YYYY-MM-DD 格式');
+assert.match(html, /id="rateUpdatedAt"/, '设置弹窗中必须可见更新日期');
+assert.doesNotMatch(m[1], /convDailyStr/, '单项列表必须保持原币种，不得混入折算后金额标签');
+
+console.log('▶ 超长历史订阅日历推算（消除 500 循环截断 Bug）');
+__setSubs([
+  // 2016 年开始的周付，距 2026 年超过 10 年（> 520 周，原算法 guard<500 会提前截断消失）
+  { id: 'w-old', name: '老周付', period: 'weekly', amount: 10, start: '2016-01-01' },
+]);
+const evOld = calEventsForMonth(2026, 9); // 2026 年 10 月
+assert.ok(Object.keys(evOld).length >= 4, '10 年前的周付在 2026 年 10 月依然应有 4~5 个续费日');
+const nextOld = nextRenewalDate({ period: 'weekly', start: '2016-01-01' }, '2026-10-04');
+assert.ok(nextOld && nextOld >= new Date('2026-10-04T00:00:00'));
+
+console.log('▶ 用例①：14 个月前开始的日付订阅必须出现在当月日历（改进2）');
+__setSubs([
+  // 2025-08-01 开始的日付，距 2026 年 10 月逾 14 个月（>425 天，原 500 护栏即将耗尽/不支持日付）
+  { id: 'd-14m', name: '老日付', period: 'daily', amount: 1, start: '2025-08-01' },
+]);
+const evDaily14m = calEventsForMonth(2026, 9); // 2026 年 10 月
+assert.equal(Object.keys(evDaily14m).length, 31, '14 个月前开始的日付订阅必须出现在当月日历的所有 31 天');
+for (let d = 1; d <= 31; d++) {
+  assert.ok(evDaily14m[d] && evDaily14m[d].some((s) => s.id === 'd-14m'), `10月${d}日必须有老日付事件`);
+}
+
+console.log('▶ 用例②：cancelAt 之后的周期不得生成事件（覆盖日历、扣款清单、nextRenewalDate 三处）');
+// ① 日历：月中截止的日付订阅，截止日之后不得生成事件
+__setSubs([
+  { id: 'd-mid-cancel', name: '月中截止日付', period: 'daily', amount: 2, start: '2026-10-01', cancelAt: '2026-10-10' },
+]);
+const evMidCancel = calEventsForMonth(2026, 9); // 2026 年 10 月
+for (let d = 1; d <= 10; d++) {
+  assert.ok(evMidCancel[d] && evMidCancel[d].some((s) => s.id === 'd-mid-cancel'), `10月${d}日（截止前）应有事件`);
+}
+for (let d = 11; d <= 31; d++) {
+  assert.ok(!evMidCancel[d] || !evMidCancel[d].some((s) => s.id === 'd-mid-cancel'), `10月${d}日（cancelAt 之后）不得生成事件`);
+}
+
+// ② nextRenewalDate：下次周期若超出 cancelAt 则返回 null
+const nextPastCancel = nextRenewalDate({ period: 'monthly', start: '2026-01-20', cancelAt: '2026-10-15' }, '2026-10-01');
+assert.equal(nextPastCancel, null, '下次周期（10-20）晚于 cancelAt（10-15）时，nextRenewalDate 必须返回 null');
+
+const nextDailyPast = nextRenewalDate({ period: 'daily', start: '2026-10-01', cancelAt: '2026-10-05' }, '2026-10-06');
+assert.equal(nextDailyPast, null, '当前时间晚于 cancelAt 时，日付 nextRenewalDate 必须返回 null');
+
+// ③ upcomingCharges：cancelAt 之后的扣款事件不得出现
+const _dNow = new Date();
+const _dPlus3 = new Date(_dNow.getTime() + 3 * 86400000);
+const _dPlus10 = new Date(_dNow.getTime() + 10 * 86400000);
+const _fmtD = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+__setSubs([
+  { id: 'up-cancel-test', name: '即将截止扣款', period: 'daily', amount: 5, start: _fmtD(_dNow), cancelAt: _fmtD(_dPlus3) },
+]);
+const upCharges = upcomingCharges(30);
+const upCancelEvents = upCharges.filter((e) => e.sub.id === 'up-cancel-test');
+assert.ok(upCancelEvents.length > 0, 'cancelAt 前应有扣款事件');
+for (const e of upCancelEvents) {
+  assert.ok(e.date <= new Date(_fmtD(_dPlus3) + 'T23:59:59'), `扣款日期 ${e.date} 不得晚于 cancelAt`);
+}
+
+console.log('▶ 服务截止（cancelAt）边界拦截');
+const nextCanceled = nextRenewalDate({ period: 'monthly', start: '2026-01-01', cancelAt: '2026-05-01' }, '2026-06-01');
+assert.equal(nextCanceled, null, '当前时间晚于 cancelAt 时不应再有下次续费日');
+__setSubs([
+  { id: 'c-stop', name: '截止服务', period: 'monthly', amount: 30, start: '2026-01-15', cancelAt: '2026-05-15' },
+]);
+const evPastCancel = calEventsForMonth(2026, 6); // 2026 年 7 月（晚于截止日）
+assert.equal(Object.keys(evPastCancel).length, 0, '超过 cancelAt 的月份不得出现续费扣费事件');
+
+console.log('▶ 备份合并去重（mergeSubs 严格按 id 去重 + 字段清洗）');
+const baseList = [
+  { id: 's1', name: 'A', period: 'monthly', amount: 10, start: '2026-01-01' },
+  { id: 's2', name: 'B', period: 'yearly', amount: 50, start: '2026-02-01' },
+  { id: 's-dup1', name: '同名同期同日', period: 'monthly', amount: 10, start: '2026-03-01' },
+];
+const incomingList = [
+  { id: 's2', name: 'B 更新', period: 'yearly', amount: 60, start: '2026-02-01' }, // 相同 id 更新
+  { id: 's3', name: '  C 脏数据  ', period: 'monthly', amount: '25', start: ' 2026-03-01 ' }, // 全新 + 字段待清洗
+  { id: 's-dup2', name: '同名同期同日', period: 'monthly', amount: 20, start: '2026-03-01' }, // 相同名/期/日但不同 id：严格按 id 区分，不误覆盖
+];
+const merged = mergeSubs(baseList, incomingList);
+assert.equal(merged.added, 2);
+assert.equal(merged.updated, 1);
+assert.equal(merged.list.length, 5);
+assert.equal(merged.list.find((s) => s.id === 's2').amount, 60);
+const cClean = merged.list.find((s) => s.id === 's3');
+assert.equal(cClean.name, 'C 脏数据');
+assert.equal(cClean.amount, 25);
+assert.equal(cClean.start, '2026-03-01');
+// 验证同名同期同日不同 id 的项均被完整保留
+assert.equal(merged.list.find((s) => s.id === 's-dup1').amount, 10);
+assert.equal(merged.list.find((s) => s.id === 's-dup2').amount, 20);
+
+console.log('▶ ICS 导出标准闹钟组件（VALARM）');
+assert.match(m[1], /BEGIN:VALARM/);
+assert.match(m[1], /TRIGGER:-P1D/);
+assert.match(m[1], /ACTION:DISPLAY/);
+assert.match(m[1], /明天「/);
 
 console.log('✅ 全部断言通过（' + DEFAULT_DATA.length + ' 条示例数据）');
