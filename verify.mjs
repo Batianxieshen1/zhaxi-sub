@@ -27,10 +27,10 @@ const ctx = {
 vm.createContext(ctx);
 // 追加一行导出：const 声明的词法绑定不会自动挂到 context 上，需在沙箱内显式导出
 vm.runInContext(
-  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA };',
+  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS };',
   ctx
 );
-const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA } = ctx.__exports;
+const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS } = ctx.__exports;
 
 function approx(actual, expected, eps = 1e-9) {
   assert.ok(Math.abs(actual - expected) < eps,
@@ -429,5 +429,46 @@ assert.match(m[1], /BEGIN:VALARM/);
 assert.match(m[1], /TRIGGER:-P1D/);
 assert.match(m[1], /ACTION:DISPLAY/);
 assert.match(m[1], /明天「/);
+
+console.log('▶ Phase 1: 快捷服务预设库（PRESET_SUBS）');
+assert.ok(Array.isArray(PRESET_SUBS), 'PRESET_SUBS 应为数组');
+assert.ok(PRESET_SUBS.length >= 24, '预设库至少包含 24 款主流服务，实际 ' + PRESET_SUBS.length);
+for (const p of PRESET_SUBS) {
+  assert.ok(p.name && typeof p.name === 'string', '预设项须有名称');
+  assert.ok(typeof p.amount === 'number' && p.amount > 0, `预设项 ${p.name} 金额须为正数`);
+  assert.ok(['daily', 'yearly', 'monthly', 'weekly', 'quarterly', 'half_yearly', 'every_n', 'one_time', 'custom'].includes(p.period), `预设项 ${p.name} 周期合法`);
+  assert.ok(['CNY', 'USD', 'EUR', 'GBP', 'JPY', 'HKD', 'KRW'].includes(p.currency), `预设项 ${p.name} 币种合法`);
+  assert.ok(p.iconColor && p.iconColor.startsWith('#'), `预设项 ${p.name} 须有品牌色`);
+}
+
+console.log('▶ Phase 1: 支付渠道打标与清洗（payment）');
+assert.ok(Array.isArray(COMMON_PAYMENTS) && COMMON_PAYMENTS.length >= 6, '包含常用支付渠道');
+assert.ok(COMMON_PAYMENTS.includes('微信代扣') && COMMON_PAYMENTS.includes('支付宝免密'), '包含主流代扣免密渠道');
+const subWithPay = normalizeSub({ name: 'ChatGPT', period: 'monthly', amount: 20, payment: '  招商信用卡  ' });
+assert.equal(subWithPay.payment, '招商信用卡', '自动去除支付渠道首尾空格');
+const subWithoutPay = normalizeSub({ name: 'Netflix', period: 'monthly', amount: 15 });
+assert.equal(subWithoutPay.payment, '', '未指定支付渠道时默认为空字符串');
+const subWithBadPay = normalizeSub({ name: 'App', period: 'yearly', amount: 10, payment: 12345 });
+assert.equal(subWithBadPay.payment, '', '非字符串支付渠道容错清洗为空');
+
+console.log('▶ Phase 1: 合并备份中支付渠道保留');
+const payMerged = mergeSubs(
+  [{ id: 'p1', name: 'A', period: 'monthly', amount: 10, payment: '微信代扣' }],
+  [{ id: 'p2', name: 'B', period: 'yearly', amount: 50, payment: '支付宝免密' }]
+);
+assert.equal(payMerged.list.find((s) => s.id === 'p1').payment, '微信代扣');
+assert.equal(payMerged.list.find((s) => s.id === 'p2').payment, '支付宝免密');
+
+console.log('▶ Phase 1: CSV 导出包含扣款渠道');
+assert.match(m[1], /'扣款渠道'/);
+assert.match(m[1], /s\.payment \|\| ''/);
+
+console.log('▶ Phase 1: 隐私隐匿模式（Privacy Mask）');
+assert.match(html, /id="btnMask"/, '页面顶栏包含隐私切换按钮');
+assert.match(html, /id="maskIcon"/, '隐私切换按钮包含图标');
+assert.match(html, /\.privacy-mode/, '包含隐私打码样式类');
+assert.match(html, /filter:\s*blur\(6px\)/, '隐私打码使用毛玻璃模糊');
+assert.match(m[1], /PRIVACY_KEY/, 'JS 包含隐私模式持久化键');
+assert.match(m[1], /togglePrivacyMode/, '包含隐私模式切换函数');
 
 console.log('✅ 全部断言通过（' + DEFAULT_DATA.length + ' 条示例数据）');

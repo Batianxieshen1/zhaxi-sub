@@ -320,6 +320,60 @@
   .field-error { font-size: 12px; color: var(--danger); margin-top: 4px; }
   .field input.invalid, .field select.invalid { border-color: var(--danger); background: #fff7f6; }
 
+  /* 常用服务快捷预设 */
+  .preset-section { margin-bottom: 16px; }
+  .preset-title { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .preset-hint { font-size: 11px; color: var(--tertiary); }
+  .preset-scroller {
+    display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  }
+  .preset-scroller::-webkit-scrollbar { height: 4px; }
+  .preset-scroller::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 999px; }
+  .preset-chip {
+    flex: 0 0 auto; scroll-snap-align: start;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f5f5f7; border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 6px 13px; font-size: 12px; font-weight: 500;
+    color: var(--text); cursor: pointer; transition: all .18s ease;
+  }
+  .preset-chip:hover { background: #e8f1ff; border-color: rgba(0, 122, 255, .3); color: var(--accent); transform: translateY(-1px); }
+  .preset-chip .preset-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* 支付方式标签 */
+  .payment-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .payment-chips button {
+    border: none; background: #f2f2f7; color: var(--text); font: inherit;
+    font-size: 12px; padding: 4px 11px; border-radius: 999px; cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .payment-chips button:hover { background: #e3edff; color: var(--accent); }
+
+  /* 隐私隐匿模式（金额打码毛玻璃） */
+  .privacy-mode .card .num,
+  .privacy-mode .sub-item .cost .daily,
+  .privacy-mode .sub-item .cost .monthly,
+  .privacy-mode .up-amt,
+  .privacy-mode .donut-total,
+  .privacy-mode #donutLegend .donut-amt,
+  .privacy-mode #byCategory .chip b,
+  .privacy-mode #calTotal,
+  .privacy-mode .cal-ev b,
+  .privacy-mode #upcomingTotal b {
+    filter: blur(6px);
+    user-select: none;
+    transition: filter .2s ease;
+  }
+  .privacy-mode .card .num:hover,
+  .privacy-mode .sub-item .cost:hover .daily,
+  .privacy-mode .sub-item .cost:hover .monthly,
+  .privacy-mode .up-amt:hover,
+  .privacy-mode .donut-total:hover,
+  .privacy-mode #calTotal:hover {
+    filter: blur(0px);
+  }
+  #btnMask.active { color: var(--accent); background: #e3edff; }
+
   /* 分段控件（iOS segmented control） */
   .seg { display: flex; background: rgba(118, 118, 128, .12); border-radius: 10px; padding: 2px; }
   .seg button {
@@ -662,8 +716,9 @@
 <header class="topbar">
   <h1>朝 夕 <span class="en-sub">Dawn Ledger</span></h1>
   <div class="actions">
+    <button id="btnMask" title="隐私隐匿模式：隐藏所有金额" aria-label="隐私隐匿模式"><svg id="maskIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
     <button id="btnCal" title="续费日历：查看订阅到期日"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="calDot" class="cal-dot" hidden></span></button>
-    <button id="btnMore" title="更多：导入与导出"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg></button>
+    <button id="btnMore" title="更多：设置与导入导出"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg></button>
     <input type="file" id="importFile" accept=".json,application/json" hidden>
   </div>
 </header>
@@ -841,6 +896,10 @@
   <form id="subForm" class="form-body modal-panel">
     <h3 id="dialogTitle">添加订阅</h3>
     <input type="hidden" id="fId">
+    <div class="preset-section" id="presetSection">
+      <div class="preset-title"><span>⚡ 常用服务快捷模板</span><span class="preset-hint">点击一键填入</span></div>
+      <div class="preset-scroller" id="presetScroller"></div>
+    </div>
     <div class="field">
       <label for="fName">名称 *</label>
       <input id="fName" placeholder="如：Netflix / iCloud / 健身房">
@@ -923,6 +982,19 @@
           </div>
         </div>
         <div class="field">
+          <label for="fPayment">支付渠道 / 扣款账户（可选）</label>
+          <input id="fPayment" list="paymentList" placeholder="如：微信免密 / 支付宝 / 招行信用卡 / Apple ID">
+          <datalist id="paymentList">
+            <option value="微信代扣"></option>
+            <option value="支付宝免密"></option>
+            <option value="Apple ID / Pay"></option>
+            <option value="信用卡"></option>
+            <option value="储蓄卡"></option>
+            <option value="PayPal"></option>
+          </datalist>
+          <div class="payment-chips" id="paymentChips"></div>
+        </div>
+        <div class="field">
           <label for="fNote">备注</label>
           <input id="fNote" placeholder="可选">
         </div>
@@ -998,10 +1070,43 @@ let subs = [];
 
 // 首次使用时的示例数据（展示效果用，可随意删改）
 const DEFAULT_DATA = [
-  { id: 'demo-1', name: 'Netflix 视频', category: '视频', period: 'monthly', amount: 15, years: null, start: '', note: '示例数据，可删除' },
-  { id: 'demo-2', name: 'iCloud+ 云空间', category: '工具', period: 'yearly', amount: 68, years: null, start: '', note: '示例数据，可删除' },
-  { id: 'demo-3', name: '剪辑软件买断', category: '工具', period: 'one_time', amount: 698, years: 3, start: '', note: '示例数据，可删除' },
-  { id: 'demo-4', name: '半年会员卡', category: '其他', period: 'custom', amount: 30, years: null, start: '2026-03-01', end: '2026-08-31', note: '示例数据，可删除' },
+  { id: 'demo-1', name: 'Netflix 视频', category: '视频', period: 'monthly', amount: 15, years: null, start: '', payment: '招商信用卡', note: '示例数据，可删除' },
+  { id: 'demo-2', name: 'iCloud+ 云空间', category: '工具', period: 'yearly', amount: 68, years: null, start: '', payment: 'Apple ID / Pay', note: '示例数据，可删除' },
+  { id: 'demo-3', name: '剪辑软件买断', category: '工具', period: 'one_time', amount: 698, years: 3, start: '', payment: '微信代扣', note: '示例数据，可删除' },
+  { id: 'demo-4', name: '半年会员卡', category: '其他', period: 'custom', amount: 30, years: null, start: '2026-03-01', end: '2026-08-31', payment: '支付宝免密', note: '示例数据，可删除' },
+];
+
+// 常用服务快捷预设库（24 项主流中外订阅服务）
+const PRESET_SUBS = [
+  { name: 'Netflix', category: '视频', period: 'monthly', amount: 15.49, currency: 'USD', iconColor: '#E50914', note: '标准高清' },
+  { name: 'ChatGPT Plus', category: '工具', period: 'monthly', amount: 20, currency: 'USD', iconColor: '#10A37F', note: 'GPT-4o / o1' },
+  { name: 'Claude Pro', category: '工具', period: 'monthly', amount: 20, currency: 'USD', iconColor: '#D97706', note: 'Claude 3.5' },
+  { name: 'GitHub Copilot', category: '工具', period: 'monthly', amount: 10, currency: 'USD', iconColor: '#24292F', note: 'AI 编程助手' },
+  { name: 'iCloud+ 50GB', category: '工具', period: 'monthly', amount: 6, currency: 'CNY', iconColor: '#007AFF', note: '云存储空间' },
+  { name: 'iCloud+ 200GB', category: '工具', period: 'monthly', amount: 21, currency: 'CNY', iconColor: '#007AFF', note: '家庭共享' },
+  { name: 'Spotify Premium', category: '音乐', period: 'monthly', amount: 11.99, currency: 'USD', iconColor: '#1DB954', note: '高品质音乐' },
+  { name: 'Apple Music', category: '音乐', period: 'monthly', amount: 11, currency: 'CNY', iconColor: '#FA2D48', note: '无损杜比音效' },
+  { name: 'YouTube Premium', category: '视频', period: 'monthly', amount: 13.99, currency: 'USD', iconColor: '#FF0000', note: '无广告后台播放' },
+  { name: 'Bilibili 大会员', category: '视频', period: 'yearly', amount: 148, currency: 'CNY', iconColor: '#FB7299', note: '1080P60 高码率' },
+  { name: '腾讯视频 VIP', category: '视频', period: 'yearly', amount: 178, currency: 'CNY', iconColor: '#FF8200', note: '影视 VIP 年卡' },
+  { name: '爱奇艺 VIP', category: '视频', period: 'yearly', amount: 178, currency: 'CNY', iconColor: '#00C250', note: '黄金会员年卡' },
+  { name: '网易云音乐黑胶', category: '音乐', period: 'yearly', amount: 108, currency: 'CNY', iconColor: '#C20C0C', note: '黑胶 VIP 年卡' },
+  { name: 'QQ 音乐豪华绿钻', category: '音乐', period: 'yearly', amount: 108, currency: 'CNY', iconColor: '#31C27C', note: '绿钻豪华年卡' },
+  { name: '1Password', category: '工具', period: 'yearly', amount: 35.88, currency: 'USD', iconColor: '#0A85EA', note: '个人版密码管理' },
+  { name: 'Setapp', category: '工具', period: 'monthly', amount: 9.99, currency: 'USD', iconColor: '#262626', note: 'Mac 优质工具聚合' },
+  { name: 'Notion Plus', category: '工具', period: 'yearly', amount: 96, currency: 'USD', iconColor: '#111111', note: '知识库协作' },
+  { name: 'Microsoft 365 个人版', category: '工具', period: 'yearly', amount: 398, currency: 'CNY', iconColor: '#D83B01', note: 'Office + 1TB OneDrive' },
+  { name: '百度网盘 SVIP', category: '工具', period: 'yearly', amount: 198, currency: 'CNY', iconColor: '#2E82FF', note: '超大容量极速下载' },
+  { name: '微信读书无限卡', category: '学习', period: 'yearly', amount: 158, currency: 'CNY', iconColor: '#2A72F8', note: '全场畅读年卡' },
+  { name: '京东 PLUS 会员', category: '生活', period: 'yearly', amount: 99, currency: 'CNY', iconColor: '#E1251B', note: '无限免邮与特权' },
+  { name: '淘宝 88VIP', category: '生活', period: 'yearly', amount: 88, currency: 'CNY', iconColor: '#FF5000', note: '联名优酷网易饿了么' },
+  { name: 'Nintendo Switch Online', category: '生活', period: 'yearly', amount: 20, currency: 'USD', iconColor: '#E60012', note: 'NSO 联机年卡' },
+  { name: 'PlayStation Plus 基本', category: '生活', period: 'yearly', amount: 79.99, currency: 'USD', iconColor: '#003791', note: 'PS+ 会员年卡' }
+];
+
+// 常见支付渠道
+const COMMON_PAYMENTS = [
+  '微信代扣', '支付宝免密', 'Apple ID / Pay', '招商信用卡', '中信信用卡', '银联信用卡', '银联储蓄卡', 'PayPal'
 ];
 
 function uid() {
@@ -1128,6 +1233,7 @@ function normalizeSub(s, idx) {
     years: s && s.period === 'one_time' ? (Number(s.years) || 0) : null,
     start: s && typeof s.start === 'string' ? s.start.trim() : '',
     end: s && typeof s.end === 'string' ? s.end.trim() : '',
+    payment: s && typeof s.payment === 'string' ? s.payment.trim() : '',
     note: s && s.note ? String(s.note).trim() : '',
     currency: s && CURRENCIES.includes(s.currency) ? s.currency : 'CNY',
     count: s && s.period === 'every_n' ? Math.max(1, Math.round(Number(s.count) || 1)) : null,
@@ -1374,10 +1480,10 @@ function triggerDownload(blob, filename, okMsg) {
 // CSV 导出（Excel 可打开）
 function exportCSV() {
   const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rows = [['名称', '类别', '周期', '金额', '币种', '使用年数', '开始', '结束', '备注', '每天成本', '每月成本', '每年成本']];
+  const rows = [['名称', '类别', '周期', '金额', '币种', '扣款渠道', '使用年数', '开始', '结束', '备注', '每天成本', '每月成本', '每年成本']];
   for (const s of subs) {
     const c = calcCosts(s);
-    rows.push([s.name, s.category, s.period, s.amount, s.currency || 'CNY', s.years || '', s.start || '', s.end || '', s.note || '',
+    rows.push([s.name, s.category, s.period, s.amount, s.currency || 'CNY', s.payment || '', s.years || '', s.start || '', s.end || '', s.note || '',
       c.daily.toFixed(3), c.monthly.toFixed(2), c.yearly.toFixed(2)]);
   }
   const blob = new Blob(['\ufeff' + rows.map((r) => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
@@ -1956,6 +2062,67 @@ function buildCatChips() {
   ).join('');
 }
 
+// 常用服务快捷预设：横向滚动卡片
+function renderPresets() {
+  const box = document.getElementById('presetScroller');
+  if (!box) return;
+  box.innerHTML = PRESET_SUBS.map((p, idx) =>
+    '<button type="button" class="preset-chip" data-preset-idx="' + idx + '" title="' + esc(p.name) + ' (' + (p.note || '') + ')">' +
+      '<span class="preset-dot" style="background:' + p.iconColor + '"></span>' +
+      '<span>' + esc(p.name) + '</span>' +
+    '</button>'
+  ).join('');
+}
+
+// 支付方式快捷选择 chips
+function buildPaymentChips() {
+  const box = document.getElementById('paymentChips');
+  if (!box) return;
+  box.innerHTML = COMMON_PAYMENTS.map((pm) =>
+    '<button type="button" data-payment="' + esc(pm) + '">' + esc(pm) + '</button>'
+  ).join('');
+}
+
+// 隐私打码隐匿模式（金额打码毛玻璃）
+const PRIVACY_KEY = 'sub-cost-privacy:v1';
+function updateMaskIcon(isPrivate) {
+  const icon = document.getElementById('maskIcon');
+  const btn = document.getElementById('btnMask');
+  if (!icon || !btn) return;
+  if (isPrivate) {
+    btn.title = '隐私隐匿模式：已开启（金额已模糊，点击恢复）';
+    // 闭眼 eye-off SVG 图标
+    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    btn.title = '隐私隐匿模式：隐藏所有金额';
+    // 睁眼 eye SVG 图标
+    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+function togglePrivacyMode() {
+  const isPrivate = document.body.classList.toggle('privacy-mode');
+  const btn = document.getElementById('btnMask');
+  if (btn) btn.classList.toggle('active', isPrivate);
+  try {
+    localStorage.setItem(PRIVACY_KEY, isPrivate ? '1' : '0');
+  } catch (e) {}
+  updateMaskIcon(isPrivate);
+}
+
+function initPrivacyMode() {
+  let isPrivate = false;
+  try {
+    isPrivate = localStorage.getItem(PRIVACY_KEY) === '1';
+  } catch (e) {}
+  if (isPrivate) {
+    document.body.classList.add('privacy-mode');
+    const btn = document.getElementById('btnMask');
+    if (btn) btn.classList.add('active');
+  }
+  updateMaskIcon(isPrivate);
+}
+
 // 每日成本的「体感」类比，让大数字可感知
 function dailyAnalogy(daily) {
   if (daily >= 20) return '≈ 一天一顿火锅';
@@ -1980,6 +2147,7 @@ function renderUpcoming() {
   document.getElementById('upcomingList').innerHTML = events.length
     ? events.map((e) => {
         const isToday = e.date.getTime() === today.getTime();
+        const payTag = e.sub.payment ? ' · 💳 ' + esc(e.sub.payment) : '';
         return '<div class="up-item">' +
           '<div class="up-date' + (isToday ? ' today' : '') + '">' +
             '<div class="d">' + e.date.getDate() + '</div>' +
@@ -1987,7 +2155,7 @@ function renderUpcoming() {
           '</div>' +
           '<div class="up-info">' +
             '<div class="n">' + esc(e.sub.name) + (isToday ? ' · 今天' : '') + '</div>' +
-            '<div class="p">' + periodText(e.sub) + '</div>' +
+            '<div class="p">' + periodText(e.sub) + payTag + '</div>' +
           '</div>' +
           '<div class="up-amt">' + fmtMoney(e.sub.amount, e.sub.currency) + '</div>' +
         '</div>';
@@ -2052,7 +2220,8 @@ function render() {
     const life = [];
     if (sub.trialEnd && new Date(sub.trialEnd + 'T00:00:00') >= _today) life.push('试用至 ' + sub.trialEnd);
     if (sub.cancelAt) life.push('服务至 ' + sub.cancelAt);
-    const meta = [inactive ? '已取消' : '', periodText(sub), renewalText(sub)].concat(life).concat([sub.note]).filter(Boolean).join(' · ');
+    const payBadge = sub.payment ? '💳 ' + sub.payment : '';
+    const meta = [inactive ? '已取消' : '', periodText(sub), renewalText(sub), payBadge].concat(life).concat([sub.note]).filter(Boolean).join(' · ');
 
     return (
       '<li class="sub-item' + (inactive ? ' inactive' : '') + (batchMode && batchSel.has(sub.id) ? ' batch-selected' : '') + '" data-id="' + esc(sub.id) + '">' +
@@ -2119,6 +2288,7 @@ function openDialog(sub) {
   f('fYears').value = sub && sub.years ? sub.years : '';
   f('fStart').value = sub ? sub.start || '' : '';
   f('fEnd').value = sub ? sub.end || '' : '';
+  f('fPayment').value = sub && sub.payment ? sub.payment : '';
   f('fNote').value = sub ? sub.note || '' : '';
   f('fTrialEnd').value = sub ? sub.trialEnd || '' : '';
   f('fCancelAt').value = sub ? sub.cancelAt || '' : '';
@@ -2127,6 +2297,8 @@ function openDialog(sub) {
   f('yearsField').hidden = (sub ? sub.period : 'yearly') !== 'one_time';
   f('endField').hidden = (sub ? sub.period : 'yearly') !== 'custom';
   f('countField').hidden = (sub ? sub.period : 'yearly') !== 'every_n';
+  const presetSec = document.getElementById('presetSection');
+  if (presetSec) presetSec.hidden = !!sub; // 编辑已有订阅时折叠预设，新增时展示
   openModal('subDialog');
   updateLivePreview();
   buildCatChips(); // 刷新类别快捷选择
@@ -2145,6 +2317,7 @@ function collectForm() {
     years: period === 'one_time' ? (Number(f('fYears').value) || 0) : null,
     start: f('fStart').value,
     end: f('fEnd').value,
+    payment: (f('fPayment') ? f('fPayment').value : '').trim(),
     note: f('fNote').value.trim(),
     currency: CURRENCIES.includes(f('fCurrency').value) ? f('fCurrency').value : 'CNY',
     count: period === 'every_n' ? Math.max(1, Math.round(Number(f('fCount').value) || 1)) : null,
@@ -2219,6 +2392,9 @@ function onSubmit(e) {
 
 function init() {
   subs = loadSubs();
+  renderPresets();
+  buildPaymentChips();
+  initPrivacyMode();
 
   // 导出备份（JSON 信息包：版本 + 导出时间 + 订阅列表）—— 先确认防误触
   function doExportJSON() {
@@ -2546,6 +2722,50 @@ function init() {
   document.getElementById('btnCancel').addEventListener('click', () => {
     closeModal('subDialog');
   });
+
+  // 表单常用服务快捷预设：点击一键填入
+  const presetBox = document.getElementById('presetScroller');
+  if (presetBox) {
+    presetBox.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-preset-idx]');
+      if (!btn) return;
+      const idx = Number(btn.dataset.presetIdx);
+      const p = PRESET_SUBS[idx];
+      if (!p) return;
+      const f = (id) => document.getElementById(id);
+      f('fName').value = p.name;
+      f('fCategory').value = p.category;
+      f('fPeriod').value = p.period;
+      f('fAmount').value = p.amount;
+      f('fCurrency').value = p.currency || 'CNY';
+      f('fNote').value = p.note || '';
+      f('yearsField').hidden = p.period !== 'one_time';
+      f('endField').hidden = p.period !== 'custom';
+      f('countField').hidden = p.period !== 'every_n';
+      updateLivePreview();
+      setFieldError('fName', '');
+      setFieldError('fAmount', '');
+      btn.style.transform = 'scale(0.95)';
+      setTimeout(() => { btn.style.transform = ''; }, 120);
+    });
+  }
+
+  // 表单支付渠道 chips 点击 → 填入输入框
+  const payChipsBox = document.getElementById('paymentChips');
+  if (payChipsBox) {
+    payChipsBox.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-payment]');
+      if (!btn) return;
+      const fPay = document.getElementById('fPayment');
+      if (fPay) fPay.value = btn.dataset.payment;
+    });
+  }
+
+  // 顶栏隐私隐匿模式切换
+  const btnMask = document.getElementById('btnMask');
+  if (btnMask) {
+    btnMask.addEventListener('click', togglePrivacyMode);
+  }
 
   // 表单类别 chips 点击 → 填入输入框
   document.getElementById('catChips').addEventListener('click', (e) => {
