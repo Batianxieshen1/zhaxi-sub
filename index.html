@@ -429,6 +429,28 @@
   }
   .seg-sm button { padding: 4px 10px; font-size: 12px; }
 
+  /* 云端多设备同步样式 */
+  .sync-status-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; background: rgba(118, 118, 128, .08);
+    border-radius: 14px; margin-bottom: 12px;
+  }
+  .sync-status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #8e8e93; flex-shrink: 0;
+  }
+  .sync-status-dot.connected {
+    background: #34c759; box-shadow: 0 0 6px rgba(52, 199, 89, .5);
+  }
+  .sync-status-info { flex: 1; min-width: 0; }
+  .sync-status-title { font-size: 13px; font-weight: 600; }
+  .sync-status-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .sync-e2ee-box {
+    margin-top: 14px; padding: 12px 14px;
+    background: rgba(0, 122, 255, .05); border: 1px solid rgba(0, 122, 255, .15);
+    border-radius: 14px;
+  }
+
   /* OLED 暗黑模式 (Dark Mode) */
   [data-theme="dark"] {
     --bg: #000000;
@@ -501,6 +523,8 @@
   [data-theme="dark"] .importance-seg button[data-val="idle"].active, :root:not([data-theme="light"]) .importance-seg button[data-val="idle"].active { color: #ff6b6b; background: rgba(201, 42, 42, .25); }
   [data-theme="dark"] .badge-idle, :root:not([data-theme="light"]) .badge-idle { background: rgba(201, 42, 42, .25); color: #ff8787; }
   [data-theme="dark"] .badge-optional, :root:not([data-theme="light"]) .badge-optional { background: rgba(230, 119, 0, .25); color: #ffd43b; }
+  [data-theme="dark"] .sync-status-card, :root:not([data-theme="light"]) .sync-status-card { background: rgba(255, 255, 255, .06); }
+  [data-theme="dark"] .sync-e2ee-box, :root:not([data-theme="light"]) .sync-e2ee-box { background: rgba(0, 122, 255, .1); border-color: rgba(0, 122, 255, .25); }
 
   /* 分段控件（iOS segmented control） */
   .seg { display: flex; background: rgba(118, 118, 128, .12); border-radius: 10px; padding: 2px; }
@@ -867,6 +891,7 @@
       </div>
     </div>
     <button type="button" data-menu="currency-settings"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="6" x2="12" y2="18"/></svg>基准币种与汇率设置</button>
+    <button type="button" data-menu="sync-settings"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><polyline points="12 13 12 9 15 12"/></svg>云端多设备同步 (WebDAV / Gist)</button>
     <button type="button" data-menu="import"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>导入备份</button>
     <button type="button" data-menu="export-json"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出 JSON 备份</button>
     <button type="button" data-menu="export-csv"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出 CSV 表格</button>
@@ -931,6 +956,100 @@
         <div class="opt-title">覆盖导入</div>
         <div class="opt-desc">清空当前设备上的全部数据，完全替换为文件中的内容（操作不可撤销）。</div>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- 云端多设备同步设置弹窗 -->
+<div id="syncDialog" class="modal" hidden>
+  <div class="modal-mask" data-modal="syncDialog"></div>
+  <div class="sync-body modal-panel" style="padding:22px 20px 20px; max-height:90vh; overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="font-size:17px;font-weight:700;margin:0;display:flex;align-items:center;gap:6px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><polyline points="12 13 12 9 15 12"/></svg>
+        云端多设备同步
+      </h3>
+      <button type="button" id="syncClose" class="plain" style="font-size:20px;line-height:1;padding:4px 8px;color:var(--muted);">&times;</button>
+    </div>
+
+    <div class="sync-status-card" id="syncStatusCard">
+      <div class="sync-status-dot" id="syncStatusDot"></div>
+      <div class="sync-status-info">
+        <div class="sync-status-title" id="syncStatusTitle">未配置云同步</div>
+        <div class="sync-status-sub" id="syncStatusSub">多端设备同步请先在下方选择同步服务</div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label>同步方式</label>
+      <div class="seg" id="syncProviderSeg" style="margin-top:6px;">
+        <button type="button" class="active" data-provider="none">关闭</button>
+        <button type="button" data-provider="webdav">WebDAV</button>
+        <button type="button" data-provider="gist">GitHub Gist</button>
+      </div>
+    </div>
+
+    <!-- WebDAV 配置区 -->
+    <div id="syncDavSec" hidden>
+      <div class="field">
+        <label for="fDavUrl">WebDAV 服务器地址 *</label>
+        <input id="fDavUrl" placeholder="如：https://dav.jianguoyun.com/dav/zhaxi/">
+        <div class="field-hint">支持坚果云、Nextcloud、InfiniCLOUD、自建 WebDAV 等</div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="fDavUser">账号 / 邮箱</label>
+          <input id="fDavUser" placeholder="WebDAV 登录用户名">
+        </div>
+        <div class="field">
+          <label for="fDavPass">应用授权密码</label>
+          <input id="fDavPass" type="password" placeholder="坚果云等第三方应用密码">
+        </div>
+      </div>
+    </div>
+
+    <!-- GitHub Gist 配置区 -->
+    <div id="syncGistSec" hidden>
+      <div class="field">
+        <label for="fGistToken">Personal Access Token (PAT) *</label>
+        <input id="fGistToken" type="password" placeholder="ghp_xxxxxxxxxxxx">
+        <div class="field-hint">创建 GitHub Token 时只需勾选 <code>gist</code> 权限</div>
+      </div>
+      <div class="field">
+        <label for="fGistId">Gist ID（可选）</label>
+        <input id="fGistId" placeholder="首次上传可留空，将自动创建私密 Gist">
+        <div class="field-hint">其他设备同步时填入相同的 Gist ID 即可实现双向合流</div>
+      </div>
+    </div>
+
+    <!-- 端对端加密 (E2EE) -->
+    <div id="syncE2eeSec" class="sync-e2ee-box" hidden>
+      <label class="switch-row" style="margin:0;cursor:pointer;">
+        <span style="font-weight:600;font-size:13px;display:flex;align-items:center;gap:5px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          端对端 AES-256 加密 (E2EE)
+        </span>
+        <input type="checkbox" id="fSyncE2ee" class="switch">
+        <span class="track"></span>
+      </label>
+      <div class="field-hint" style="margin-top:6px;">数据在本地加密后再上传，云服务商仅存密文，零知识最强隐私保护</div>
+      <div class="field" id="syncE2eePassField" style="margin-top:10px;" hidden>
+        <label for="fSyncPass">加密主密码 *</label>
+        <input id="fSyncPass" type="password" placeholder="多端同步时需输入相同主密码以解密">
+      </div>
+    </div>
+
+    <!-- 操作按钮区 -->
+    <div class="sync-actions" style="margin-top:18px;display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="btnSyncTest" style="flex:1;">🧪 测试连接</button>
+        <button type="button" id="btnSyncPull" style="flex:1;">⬇️ 从云端拉取合并</button>
+      </div>
+      <button type="button" id="btnSyncPush" class="primary" style="width:100%;">⬆️ 上传覆盖至云端</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+        <button type="button" id="btnSyncCloseBottom" class="plain" style="color:var(--muted);font-size:13px;">关闭</button>
+        <button type="button" id="btnSyncSave" style="background:#e3edff;color:var(--accent);font-weight:600;font-size:13px;padding:6px 16px;border-radius:999px;border:none;cursor:pointer;">保存配置</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1323,6 +1442,500 @@ function getBaseCurrency() {
 
 function getRates() {
   return (userSettings && userSettings.rates) || DEFAULT_RATES;
+}
+
+// ==================== 云端多设备私密同步引擎 (WebDAV / GitHub Gist / E2EE) ====================
+const SYNC_SETTINGS_KEY = 'sub-cost-sync:v1';
+const DEFAULT_SYNC_SETTINGS = {
+  provider: 'none', // 'none' | 'webdav' | 'gist'
+  davUrl: '',
+  davUser: '',
+  davPass: '',
+  gistToken: '',
+  gistId: '',
+  e2eeEnabled: false,
+  e2eePassword: '',
+  lastSyncTime: '',
+};
+
+function loadSyncSettings() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(SYNC_SETTINGS_KEY);
+      if (raw) {
+        return { ...DEFAULT_SYNC_SETTINGS, ...JSON.parse(raw) };
+      }
+    }
+  } catch (e) {}
+  return { ...DEFAULT_SYNC_SETTINGS };
+}
+
+function saveSyncSettings(s) {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(SYNC_SETTINGS_KEY, JSON.stringify(s));
+    }
+  } catch (e) {}
+}
+
+function arrayBufferToBase64(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+function makeBasicAuthHeader(user, pass) {
+  const str = (user || '') + ':' + (pass || '');
+  const utf8Bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < utf8Bytes.length; i++) binary += String.fromCharCode(utf8Bytes[i]);
+  return 'Basic ' + btoa(binary);
+}
+
+// 端对端加密：PBKDF2 衍生 256 位密钥 + AES-GCM
+async function deriveAesGcmKey(password, saltUint8) {
+  const enc = new TextEncoder();
+  const cryptoObj = typeof window !== 'undefined' && window.crypto ? window.crypto : globalThis.crypto;
+  const keyMaterial = await cryptoObj.subtle.importKey(
+    'raw',
+    enc.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+  return await cryptoObj.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: saltUint8,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptData(plainText, password) {
+  const cryptoObj = typeof window !== 'undefined' && window.crypto ? window.crypto : globalThis.crypto;
+  const salt = cryptoObj.getRandomValues(new Uint8Array(16));
+  const iv = cryptoObj.getRandomValues(new Uint8Array(12));
+  const key = await deriveAesGcmKey(password, salt);
+  const enc = new TextEncoder();
+  const cipherBuffer = await cryptoObj.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv },
+    key,
+    enc.encode(plainText)
+  );
+  return JSON.stringify({
+    _e2ee: true,
+    version: 1,
+    salt: arrayBufferToBase64(salt),
+    iv: arrayBufferToBase64(iv),
+    ciphertext: arrayBufferToBase64(cipherBuffer),
+  });
+}
+
+async function decryptData(cipherTextOrJson, password) {
+  const data = typeof cipherTextOrJson === 'string' ? JSON.parse(cipherTextOrJson) : cipherTextOrJson;
+  if (!data || !data._e2ee) {
+    return typeof cipherTextOrJson === 'string' ? cipherTextOrJson : JSON.stringify(cipherTextOrJson);
+  }
+  if (!password) {
+    throw new Error('该备份已启用端对端加密，请输入主密码进行解密');
+  }
+  const cryptoObj = typeof window !== 'undefined' && window.crypto ? window.crypto : globalThis.crypto;
+  const salt = new Uint8Array(base64ToArrayBuffer(data.salt));
+  const iv = new Uint8Array(base64ToArrayBuffer(data.iv));
+  const cipherBytes = base64ToArrayBuffer(data.ciphertext);
+  const key = await deriveAesGcmKey(password, salt);
+  try {
+    const decryptedBuffer = await cryptoObj.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      cipherBytes
+    );
+    const dec = new TextDecoder();
+    return dec.decode(decryptedBuffer);
+  } catch (e) {
+    throw new Error('端对端解密失败：主密码不匹配或密文损坏');
+  }
+}
+
+// ---- WebDAV 客户端 ----
+async function pushWebDAV(cfg, payloadStr) {
+  let url = (cfg.davUrl || '').trim();
+  if (!url) throw new Error('请填写 WebDAV 服务器地址');
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  if (url.endsWith('/')) {
+    url += 'zhaxi-backup.json';
+  } else if (!/\.json$/i.test(url) && !url.includes('.')) {
+    url += '/zhaxi-backup.json';
+  }
+  const authHeader = makeBasicAuthHeader(cfg.davUser || '', cfg.davPass || '');
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': authHeader,
+      'Content-Type': 'application/json;charset=utf-8'
+    },
+    body: payloadStr
+  });
+  if (!res.ok) {
+    throw new Error('WebDAV 上传失败（HTTP ' + res.status + ' ' + res.statusText + '）');
+  }
+  return { ok: true, url };
+}
+
+async function pullWebDAV(cfg) {
+  let url = (cfg.davUrl || '').trim();
+  if (!url) throw new Error('请填写 WebDAV 服务器地址');
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  if (url.endsWith('/')) {
+    url += 'zhaxi-backup.json';
+  } else if (!/\.json$/i.test(url) && !url.includes('.')) {
+    url += '/zhaxi-backup.json';
+  }
+  const authHeader = makeBasicAuthHeader(cfg.davUser || '', cfg.davPass || '');
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: { 'Authorization': authHeader }
+  });
+  if (res.status === 404) {
+    throw new Error('云端尚无备份文件（404），请先点击「上传覆盖至云端」创建初始快照');
+  }
+  if (!res.ok) {
+    throw new Error('WebDAV 读取失败（HTTP ' + res.status + ' ' + res.statusText + '）');
+  }
+  return await res.text();
+}
+
+// ---- GitHub Gist 客户端 ----
+const GIST_FILENAME = 'dawn_ledger_backup.json';
+
+async function pushGist(cfg, payloadStr) {
+  const token = (cfg.gistToken || '').trim();
+  if (!token) throw new Error('请填写 GitHub Personal Access Token (PAT)');
+  const gistId = (cfg.gistId || '').trim();
+  const headers = {
+    'Authorization': 'token ' + token,
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json'
+  };
+
+  if (!gistId) {
+    const res = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        description: 'Dawn Ledger (朝夕) 订阅记账私密云备份',
+        public: false,
+        files: {
+          [GIST_FILENAME]: { content: payloadStr }
+        }
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error('创建 Gist 失败（HTTP ' + res.status + '）：' + (err.message || res.statusText));
+    }
+    const data = await res.json();
+    return { ok: true, gistId: data.id };
+  } else {
+    const res = await fetch('https://api.github.com/gists/' + gistId, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        description: 'Dawn Ledger (朝夕) 订阅记账私密云备份',
+        files: {
+          [GIST_FILENAME]: { content: payloadStr }
+        }
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error('更新 Gist 失败（HTTP ' + res.status + '）：' + (err.message || res.statusText));
+    }
+    return { ok: true, gistId };
+  }
+}
+
+async function pullGist(cfg) {
+  const token = (cfg.gistToken || '').trim();
+  const gistId = (cfg.gistId || '').trim();
+  if (!token) throw new Error('请填写 GitHub Personal Access Token (PAT)');
+  if (!gistId) throw new Error('尚未绑定 Gist ID，请先上传首份备份或填入现有 Gist ID');
+
+  const headers = {
+    'Authorization': 'token ' + token,
+    'Accept': 'application/vnd.github.v3+json'
+  };
+  const res = await fetch('https://api.github.com/gists/' + gistId, { headers });
+  if (res.status === 404) {
+    throw new Error('未找到指定的 Gist（404），请检查 Gist ID 是否填写正确');
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error('读取 Gist 失败（HTTP ' + res.status + '）：' + (err.message || res.statusText));
+  }
+  const data = await res.json();
+  const file = data.files && (data.files[GIST_FILENAME] || Object.values(data.files)[0]);
+  if (!file || typeof file.content !== 'string') {
+    throw new Error('Gist 中未找到备份文件内容');
+  }
+  return file.content;
+}
+
+// ---- 测试连接 ----
+async function testSyncConnection(cfg) {
+  if (!cfg || cfg.provider === 'none') {
+    throw new Error('请先在上方选择同步方式（WebDAV 或 GitHub Gist）');
+  }
+  if (cfg.provider === 'webdav') {
+    let url = (cfg.davUrl || '').trim();
+    if (!url) throw new Error('请填写 WebDAV 服务器地址');
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    const authHeader = makeBasicAuthHeader(cfg.davUser || '', cfg.davPass || '');
+
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Authorization': authHeader }
+      });
+      if (res.ok || res.status === 404) {
+        return { ok: true, msg: 'WebDAV 服务器连接成功！' + (res.status === 404 ? '（云端尚未创建备份）' : '（已检测到云端文件）') };
+      }
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('WebDAV 认证失败：账号或应用授权密码错误');
+      }
+      throw new Error('WebDAV 响应异常（HTTP ' + res.status + ' ' + res.statusText + '）');
+    } catch (e) {
+      if (e.message && e.message.includes('认证失败')) throw e;
+      if (e.name === 'TypeError' || String(e).includes('Failed to fetch')) {
+        throw new Error('网络请求受阻或遇到跨域限制(CORS)。坚果云等受限服务建议改用 GitHub Gist 无缝直连');
+      }
+      throw e;
+    }
+  } else if (cfg.provider === 'gist') {
+    const token = (cfg.gistToken || '').trim();
+    if (!token) throw new Error('请填写 GitHub Personal Access Token (PAT)');
+    try {
+      const res = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': 'token ' + token,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (!res.ok) {
+        if (res.status === 401) throw new Error('Token 无效或已失效，请重新生成');
+        throw new Error('GitHub 连接失败（HTTP ' + res.status + '）');
+      }
+      const data = await res.json();
+      return { ok: true, msg: 'GitHub 验证通过！已连接到账户 @' + (data.login || 'User') };
+    } catch (e) {
+      if (e.name === 'TypeError' || String(e).includes('Failed to fetch')) {
+        throw new Error('无法连接到 GitHub API，请检查本地网络');
+      }
+      throw e;
+    }
+  }
+}
+
+// 调度：上传覆盖
+async function doCloudSyncPush(showToast = true) {
+  const cfg = loadSyncSettings();
+  if (!cfg || cfg.provider === 'none') {
+    throw new Error('未配置云同步服务，请先在设置中选择 WebDAV 或 GitHub Gist');
+  }
+  const pkg = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    subs: subs.map((s, i) => normalizeSub(s, i)),
+    settings: loadSettings(),
+  };
+  let content = JSON.stringify(pkg, null, 2);
+  if (cfg.e2eeEnabled) {
+    if (!cfg.e2eePassword) throw new Error('已启用端对端加密，但未设置主密码');
+    content = await encryptData(content, cfg.e2eePassword);
+  }
+
+  let result;
+  if (cfg.provider === 'webdav') {
+    result = await pushWebDAV(cfg, content);
+  } else if (cfg.provider === 'gist') {
+    result = await pushGist(cfg, content);
+    if (result && result.gistId && result.gistId !== cfg.gistId) {
+      cfg.gistId = result.gistId;
+      const fGistId = document.getElementById('fGistId');
+      if (fGistId) fGistId.value = cfg.gistId;
+    }
+  }
+
+  cfg.lastSyncTime = new Date().toISOString();
+  saveSyncSettings(cfg);
+  updateSyncStatusUI();
+  if (showToast) {
+    toast('☁️ 数据已成功同步至云端！');
+  }
+  return { ok: true, lastSyncTime: cfg.lastSyncTime };
+}
+
+// 调度：拉取合流
+async function doCloudSyncPull(showToast = true) {
+  const cfg = loadSyncSettings();
+  if (!cfg || cfg.provider === 'none') {
+    throw new Error('未配置云同步服务，请先在设置中选择 WebDAV 或 GitHub Gist');
+  }
+  let rawContent = '';
+  if (cfg.provider === 'webdav') {
+    rawContent = await pullWebDAV(cfg);
+  } else if (cfg.provider === 'gist') {
+    rawContent = await pullGist(cfg);
+  }
+
+  let jsonStr = rawContent;
+  let parsed = null;
+  try {
+    parsed = JSON.parse(rawContent);
+  } catch (e) {
+    throw new Error('云端数据格式异常（无法解析 JSON）');
+  }
+
+  if (parsed && parsed._e2ee) {
+    let pass = cfg.e2eePassword;
+    if (!pass) {
+      pass = prompt('该备份已启用端对端 AES-256 加密，请输入主密码进行解密：');
+      if (!pass) throw new Error('已取消解密');
+    }
+    jsonStr = await decryptData(parsed, pass);
+    parsed = JSON.parse(jsonStr);
+  }
+
+  if (!parsed || !Array.isArray(parsed.subs)) {
+    throw new Error('云端备份中缺少有效的订阅数据列表 (subs)');
+  }
+
+  const mergeRes = mergeSubs(subs, parsed.subs);
+  subs = mergeRes.list;
+  saveSubs(subs);
+
+  if (parsed.settings && typeof parsed.settings === 'object') {
+    const curSettings = loadSettings();
+    if (parsed.settings.baseCurrency && CURRENCIES.includes(parsed.settings.baseCurrency)) {
+      curSettings.baseCurrency = parsed.settings.baseCurrency;
+    }
+    if (parsed.settings.rates) {
+      curSettings.rates = { ...curSettings.rates, ...parsed.settings.rates };
+    }
+    saveSettings(curSettings);
+  }
+
+  cfg.lastSyncTime = new Date().toISOString();
+  saveSyncSettings(cfg);
+  updateSyncStatusUI();
+  render();
+
+  const msg = '☁️ 云端合流完成：新增 ' + mergeRes.added + ' 项，更新 ' + mergeRes.updated + ' 项';
+  if (showToast) toast(msg);
+  return { ok: true, added: mergeRes.added, updated: mergeRes.updated };
+}
+
+function updateSyncStatusUI() {
+  const cfg = loadSyncSettings();
+  const dot = document.getElementById('syncStatusDot');
+  const title = document.getElementById('syncStatusTitle');
+  const sub = document.getElementById('syncStatusSub');
+  if (!dot || !title || !sub) return;
+
+  if (!cfg || cfg.provider === 'none') {
+    dot.className = 'sync-status-dot';
+    title.textContent = '未配置云同步';
+    sub.textContent = '多端设备同步请先在下方选择同步服务';
+  } else {
+    dot.className = 'sync-status-dot connected';
+    const provName = cfg.provider === 'webdav' ? 'WebDAV' : 'GitHub Gist';
+    const encText = cfg.e2eeEnabled ? ' · 🔐 已开启 AES-256 加密' : '';
+    title.textContent = '已连接到 ' + provName + encText;
+    if (cfg.lastSyncTime) {
+      const d = new Date(cfg.lastSyncTime);
+      const timeStr = d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0') + ' ' +
+        String(d.getHours()).padStart(2, '0') + ':' +
+        String(d.getMinutes()).padStart(2, '0');
+      sub.textContent = '上次同步时间：' + timeStr;
+    } else {
+      sub.textContent = '尚未同步过数据，建议点击「上传覆盖至云端」保存初始快照';
+    }
+  }
+}
+
+function collectSyncConfigFromForm() {
+  const segActive = document.querySelector('#syncProviderSeg button.active');
+  const provider = segActive ? segActive.dataset.provider : 'none';
+  const prev = loadSyncSettings();
+  return {
+    provider,
+    davUrl: (document.getElementById('fDavUrl') ? document.getElementById('fDavUrl').value : '').trim(),
+    davUser: (document.getElementById('fDavUser') ? document.getElementById('fDavUser').value : '').trim(),
+    davPass: document.getElementById('fDavPass') ? document.getElementById('fDavPass').value : '',
+    gistToken: (document.getElementById('fGistToken') ? document.getElementById('fGistToken').value : '').trim(),
+    gistId: (document.getElementById('fGistId') ? document.getElementById('fGistId').value : '').trim(),
+    e2eeEnabled: document.getElementById('fSyncE2ee') ? document.getElementById('fSyncE2ee').checked : false,
+    e2eePassword: document.getElementById('fSyncPass') ? document.getElementById('fSyncPass').value : '',
+    lastSyncTime: prev.lastSyncTime || '',
+  };
+}
+
+function openSyncDialog() {
+  const cfg = loadSyncSettings();
+  const seg = document.getElementById('syncProviderSeg');
+  if (seg) {
+    seg.querySelectorAll('button').forEach((b) => {
+      b.classList.toggle('active', b.dataset.provider === cfg.provider);
+    });
+  }
+  const fDavUrl = document.getElementById('fDavUrl');
+  const fDavUser = document.getElementById('fDavUser');
+  const fDavPass = document.getElementById('fDavPass');
+  const fGistToken = document.getElementById('fGistToken');
+  const fGistId = document.getElementById('fGistId');
+  const fSyncE2ee = document.getElementById('fSyncE2ee');
+  const fSyncPass = document.getElementById('fSyncPass');
+
+  if (fDavUrl) fDavUrl.value = cfg.davUrl || '';
+  if (fDavUser) fDavUser.value = cfg.davUser || '';
+  if (fDavPass) fDavPass.value = cfg.davPass || '';
+  if (fGistToken) fGistToken.value = cfg.gistToken || '';
+  if (fGistId) fGistId.value = cfg.gistId || '';
+  if (fSyncE2ee) fSyncE2ee.checked = !!cfg.e2eeEnabled;
+  if (fSyncPass) fSyncPass.value = cfg.e2eePassword || '';
+
+  const davSec = document.getElementById('syncDavSec');
+  const gistSec = document.getElementById('syncGistSec');
+  const e2eeSec = document.getElementById('syncE2eeSec');
+  const e2eePassField = document.getElementById('syncE2eePassField');
+
+  if (davSec) davSec.hidden = cfg.provider !== 'webdav';
+  if (gistSec) gistSec.hidden = cfg.provider !== 'gist';
+  if (e2eeSec) e2eeSec.hidden = cfg.provider === 'none';
+  if (e2eePassField) e2eePassField.hidden = !cfg.e2eeEnabled;
+
+  updateSyncStatusUI();
+  openModal('syncDialog');
 }
 
 // 金额折算：从 fromCur 折算到 toCur（默认折算到基准币种）
@@ -3008,9 +3621,10 @@ function init() {
     toast('已保存基准币种与汇率设置');
   });
 
-  // 更多菜单（顶栏 ⋯）：收纳导入导出
+  // 更多菜单（顶栏 ⋯）：收纳导入导出与同步
   const menuActions = {
     'currency-settings': openCurrencyDialog,
+    'sync-settings': openSyncDialog,
     import: doImportPick,
     'export-json': doExportJSON,
     'export-csv': doExportCSV,
@@ -3031,6 +3645,103 @@ function init() {
       closeModal('menuDialog');
     }
   });
+
+  // 云端同步弹窗事件绑定
+  const syncClose = document.getElementById('syncClose');
+  if (syncClose) syncClose.addEventListener('click', () => closeModal('syncDialog'));
+  const btnSyncCloseBottom = document.getElementById('btnSyncCloseBottom');
+  if (btnSyncCloseBottom) btnSyncCloseBottom.addEventListener('click', () => closeModal('syncDialog'));
+
+  const syncProviderSeg = document.getElementById('syncProviderSeg');
+  if (syncProviderSeg) {
+    syncProviderSeg.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-provider]');
+      if (!btn) return;
+      syncProviderSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === btn));
+      const prov = btn.dataset.provider;
+      const davSec = document.getElementById('syncDavSec');
+      const gistSec = document.getElementById('syncGistSec');
+      const e2eeSec = document.getElementById('syncE2eeSec');
+      if (davSec) davSec.hidden = prov !== 'webdav';
+      if (gistSec) gistSec.hidden = prov !== 'gist';
+      if (e2eeSec) e2eeSec.hidden = prov === 'none';
+    });
+  }
+
+  const fSyncE2ee = document.getElementById('fSyncE2ee');
+  if (fSyncE2ee) {
+    fSyncE2ee.addEventListener('change', () => {
+      const field = document.getElementById('syncE2eePassField');
+      if (field) field.hidden = !fSyncE2ee.checked;
+    });
+  }
+
+  const btnSyncSave = document.getElementById('btnSyncSave');
+  if (btnSyncSave) {
+    btnSyncSave.addEventListener('click', () => {
+      const cfg = collectSyncConfigFromForm();
+      saveSyncSettings(cfg);
+      updateSyncStatusUI();
+      toast('已保存云端同步配置');
+    });
+  }
+
+  const btnSyncTest = document.getElementById('btnSyncTest');
+  if (btnSyncTest) {
+    btnSyncTest.addEventListener('click', async () => {
+      const cfg = collectSyncConfigFromForm();
+      const oldText = btnSyncTest.textContent;
+      btnSyncTest.textContent = '测试中...';
+      btnSyncTest.disabled = true;
+      try {
+        const res = await testSyncConnection(cfg);
+        toast(res.msg);
+      } catch (err) {
+        toast(err.message, 'error');
+      } finally {
+        btnSyncTest.textContent = oldText;
+        btnSyncTest.disabled = false;
+      }
+    });
+  }
+
+  const btnSyncPush = document.getElementById('btnSyncPush');
+  if (btnSyncPush) {
+    btnSyncPush.addEventListener('click', async () => {
+      const cfg = collectSyncConfigFromForm();
+      saveSyncSettings(cfg);
+      const oldText = btnSyncPush.textContent;
+      btnSyncPush.textContent = '上传中...';
+      btnSyncPush.disabled = true;
+      try {
+        await doCloudSyncPush();
+      } catch (err) {
+        toast('上传失败：' + err.message, 'error');
+      } finally {
+        btnSyncPush.textContent = oldText;
+        btnSyncPush.disabled = false;
+      }
+    });
+  }
+
+  const btnSyncPull = document.getElementById('btnSyncPull');
+  if (btnSyncPull) {
+    btnSyncPull.addEventListener('click', async () => {
+      const cfg = collectSyncConfigFromForm();
+      saveSyncSettings(cfg);
+      const oldText = btnSyncPull.textContent;
+      btnSyncPull.textContent = '合流中...';
+      btnSyncPull.disabled = true;
+      try {
+        await doCloudSyncPull();
+      } catch (err) {
+        toast('拉取失败：' + err.message, 'error');
+      } finally {
+        btnSyncPull.textContent = oldText;
+        btnSyncPull.disabled = false;
+      }
+    });
+  }
 
   // 跨标签页同步：另一个页面改了数据，这里自动刷新
   window.addEventListener('storage', (e) => {

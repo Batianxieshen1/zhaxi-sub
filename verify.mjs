@@ -18,7 +18,16 @@ const ctx = {
     setItem(k, v) { this._s[k] = String(v); },
     removeItem(k) { delete this._s[k]; },
   },
-  crypto: { randomUUID: () => 'uuid-test' },
+  crypto: {
+    randomUUID: () => 'uuid-test',
+    subtle: globalThis.crypto.subtle,
+    getRandomValues: (arr) => globalThis.crypto.getRandomValues(arr),
+  },
+  TextEncoder: globalThis.TextEncoder,
+  TextDecoder: globalThis.TextDecoder,
+  btoa: globalThis.btoa,
+  atob: globalThis.atob,
+  fetch: globalThis.fetch,
   alert() {},
   Blob: class {},
   URL: { createObjectURL: () => '', revokeObjectURL() {} },
@@ -27,10 +36,10 @@ const ctx = {
 vm.createContext(ctx);
 // 追加一行导出：const 声明的词法绑定不会自动挂到 context 上，需在沙箱内显式导出
 vm.runInContext(
-  m[1] + '\n;globalThis.__exports = { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS };',
+  m[1] + '\n;globalThis.__exports = { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS, loadSyncSettings, saveSyncSettings, encryptData, decryptData, arrayBufferToBase64, base64ToArrayBuffer, pushWebDAV, pullWebDAV, pushGist, pullGist, testSyncConnection, SYNC_SETTINGS_KEY, DEFAULT_SYNC_SETTINGS };',
   ctx
 );
-const { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS } = ctx.__exports;
+const { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS, loadSyncSettings, saveSyncSettings, encryptData, decryptData, arrayBufferToBase64, base64ToArrayBuffer, pushWebDAV, pullWebDAV, pushGist, pullGist, testSyncConnection, SYNC_SETTINGS_KEY, DEFAULT_SYNC_SETTINGS } = ctx.__exports;
 
 function approx(actual, expected, eps = 1e-9) {
   assert.ok(Math.abs(actual - expected) < eps,
@@ -543,5 +552,120 @@ assert.match(html, /id="sunkCard"/, 'DOM 包含累计沉没成本卡片');
 assert.match(html, /id="importanceSeg"/, 'DOM 包含必要性评级切换组件');
 assert.match(html, /\.badge-idle/, '包含闲置高亮徽章样式');
 assert.match(html, /\.idle-banner/, '包含预警横幅动画与布局样式');
+
+console.log('▶ Phase 3: 云端同步配置与持久化（loadSyncSettings / saveSyncSettings）');
+const initialSync = loadSyncSettings();
+assert.equal(initialSync.provider, 'none');
+assert.equal(initialSync.e2eeEnabled, false);
+saveSyncSettings({ provider: 'webdav', davUrl: 'https://dav.example.com/', davUser: 'user1', davPass: 'p123', e2eeEnabled: true, e2eePassword: 'pass' });
+const loadedSync = loadSyncSettings();
+assert.equal(loadedSync.provider, 'webdav');
+assert.equal(loadedSync.davUrl, 'https://dav.example.com/');
+assert.equal(loadedSync.davUser, 'user1');
+assert.equal(loadedSync.e2eeEnabled, true);
+
+console.log('▶ Phase 3: Base64 与 ArrayBuffer 互转无损性');
+const sampleBytes = new Uint8Array([0, 1, 255, 128, 64, 32, 16, 8, 4, 2, 1]);
+const b64 = arrayBufferToBase64(sampleBytes.buffer);
+const restoredBytes = new Uint8Array(base64ToArrayBuffer(b64));
+assert.deepEqual(Array.from(sampleBytes), Array.from(restoredBytes));
+
+console.log('▶ Phase 3: 端对端 AES-256 加密与解密（E2EE 零知识保障）');
+const originalSecret = JSON.stringify({ note: '敏感财务数据', amount: 9999, currency: 'USD' });
+const masterPass = 'SuperStrongMasterPassword!#123';
+const encryptedPayload = await encryptData(originalSecret, masterPass);
+const encryptedObj = JSON.parse(encryptedPayload);
+assert.equal(encryptedObj._e2ee, true);
+assert.ok(encryptedObj.salt && encryptedObj.iv && encryptedObj.ciphertext);
+assert.ok(!encryptedPayload.includes('敏感财务数据'), '密文中绝不能泄露明文内容');
+
+// 密码正确解密
+const decryptedSecret = await decryptData(encryptedPayload, masterPass);
+assert.equal(decryptedSecret, originalSecret, '正确主密码应无损解密出原始内容');
+
+// 密码错误防御拦截
+await assert.rejects(
+  async () => {
+    await decryptData(encryptedPayload, 'WrongPassword');
+  },
+  /端对端解密失败/
+);
+
+// 未加密的数据容错处理
+const plainInput = JSON.stringify({ plain: true });
+assert.equal(await decryptData(plainInput, ''), plainInput);
+
+console.log('▶ Phase 3: WebDAV 客户端与地址规整（pushWebDAV / pullWebDAV）');
+// 模拟 fetch 拦截
+let davRequests = [];
+ctx.fetch = async (url, opts) => {
+  davRequests.push({ url, method: opts.method, headers: opts.headers, body: opts.body });
+  if (opts.method === 'PUT') {
+    return { ok: true, status: 200, statusText: 'OK' };
+  }
+  if (opts.method === 'GET') {
+    return { ok: true, status: 200, statusText: 'OK', text: async () => '{"version":1,"subs":[]}' };
+  }
+  return { ok: true, status: 200 };
+};
+
+// 地址以 / 结尾时自动拼接 zhaxi-backup.json
+await pushWebDAV({ davUrl: 'https://dav.jianguoyun.com/dav/myfolder/', davUser: 'me@example.com', davPass: 'app-pass' }, '{"test":1}');
+assert.equal(davRequests[0].url, 'https://dav.jianguoyun.com/dav/myfolder/zhaxi-backup.json');
+assert.equal(davRequests[0].method, 'PUT');
+assert.ok(davRequests[0].headers.Authorization.startsWith('Basic '));
+
+// 读取测试
+const davGot = await pullWebDAV({ davUrl: 'https://dav.jianguoyun.com/dav/myfolder/', davUser: 'me@example.com', davPass: 'app-pass' });
+assert.equal(davGot, '{"version":1,"subs":[]}');
+
+console.log('▶ Phase 3: GitHub Gist 客户端（pushGist / pullGist）');
+let gistRequests = [];
+ctx.fetch = async (url, opts) => {
+  gistRequests.push({ url, method: opts?.method || 'GET', headers: opts?.headers, body: opts?.body });
+  if (url === 'https://api.github.com/gists' && opts.method === 'POST') {
+    return { ok: true, status: 201, json: async () => ({ id: 'new-gist-id-888' }) };
+  }
+  if (url === 'https://api.github.com/gists/new-gist-id-888' && opts.method === 'PATCH') {
+    return { ok: true, status: 200, json: async () => ({ id: 'new-gist-id-888' }) };
+  }
+  if (url === 'https://api.github.com/gists/new-gist-id-888' && (!opts || !opts.method || opts.method === 'GET')) {
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        files: {
+          'dawn_ledger_backup.json': { content: '{"version":1,"subs":[{"id":"g1","name":"GistSub"}]}' }
+        }
+      })
+    };
+  }
+  if (url === 'https://api.github.com/user') {
+    return { ok: true, status: 200, json: async () => ({ login: 'octocat' }) };
+  }
+  return { ok: false, status: 404 };
+};
+
+// 首次上传自动创建 Gist
+const gistRes1 = await pushGist({ gistToken: 'ghp_testtoken', gistId: '' }, '{"version":1}');
+assert.equal(gistRes1.gistId, 'new-gist-id-888');
+
+// 读取 Gist
+const gistGot = await pullGist({ gistToken: 'ghp_testtoken', gistId: 'new-gist-id-888' });
+assert.match(gistGot, /GistSub/);
+
+// 测试连接验证
+const testConnRes = await testSyncConnection({ provider: 'gist', gistToken: 'ghp_testtoken' });
+assert.ok(testConnRes.ok);
+assert.match(testConnRes.msg, /@octocat/);
+
+console.log('▶ Phase 3: 多端云同步 DOM 与更多菜单联动');
+assert.match(html, /id="syncDialog"/, '页面包含云端同步弹窗');
+assert.match(html, /id="syncStatusCard"/, '弹窗包含同步状态指示卡片');
+assert.match(html, /id="syncProviderSeg"/, '弹窗包含 WebDAV / Gist 服务切换器');
+assert.match(html, /id="syncDavSec"/, '包含 WebDAV 地址与授权配置区');
+assert.match(html, /id="syncGistSec"/, '包含 GitHub Token 与 Gist ID 配置区');
+assert.match(html, /id="syncE2eeSec"/, '包含端对端 AES-256 主密码加密选项');
+assert.match(html, /data-menu="sync-settings"/, '更多菜单包含云端同步入口');
 
 console.log('✅ 全部断言通过（' + DEFAULT_DATA.length + ' 条示例数据）');
