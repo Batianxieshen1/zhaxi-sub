@@ -374,6 +374,134 @@
   }
   #btnMask.active { color: var(--accent); background: #e3edff; }
 
+  /* 沉没成本透视卡片 */
+  .sunk-card {
+    background: #eef6ff;
+    border: 1px solid rgba(0, 122, 255, .18);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #0056b3;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* 必要性断舍离评估单选控件 */
+  .importance-seg { margin-top: 6px; }
+  .importance-seg button { flex: 1; text-align: center; font-size: 12px; padding: 7px 4px; }
+  .importance-seg button[data-val="essential"].active { color: #2b8a3e; background: #ebfbee; }
+  .importance-seg button[data-val="optional"].active { color: #e67700; background: #fff9db; }
+  .importance-seg button[data-val="idle"].active { color: #c92a2a; background: #ffe3e3; }
+
+  /* 列表项必要性徽标 */
+  .badge-importance {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 11px; font-weight: 500; border-radius: 6px; padding: 1px 6px;
+  }
+  .badge-idle { background: #ffe3e3; color: #c92a2a; }
+  .badge-optional { background: #fff9db; color: #d9480f; }
+
+  /* 断舍离止血预警横幅 */
+  .idle-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: #fff8f0; border: 1px solid #ffd8a8; color: #a65100;
+    border-radius: 16px; padding: 12px 18px; margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(255, 146, 43, .12);
+    animation: appleIn .4s ease;
+  }
+  .idle-left { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.4; }
+  .idle-emoji { font-size: 16px; }
+  .idle-btn {
+    border: none; background: #e8590c; color: #fff; font-size: 12px; font-weight: 600;
+    padding: 6px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    transition: background .2s, transform .15s; flex-shrink: 0;
+  }
+  .idle-btn:hover { background: #d9480f; }
+  .idle-btn.active { background: #495057; }
+
+  /* 更多菜单中的主题切换行 */
+  .menu-theme-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; margin: 4px 0 10px; background: rgba(118, 118, 128, .08);
+    border-radius: 12px; font-size: 14px;
+  }
+  .seg-sm button { padding: 4px 10px; font-size: 12px; }
+
+  /* OLED 暗黑模式 (Dark Mode) */
+  [data-theme="dark"] {
+    --bg: #000000;
+    --card: #1c1c1e;
+    --text: #f5f5f7;
+    --muted: #8e8e93;
+    --tertiary: #636366;
+    --hairline: rgba(255, 255, 255, 0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --muted: #8e8e93;
+      --tertiary: #636366;
+      --hairline: rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  [data-theme="dark"] body, :root:not([data-theme="light"]) body { background: var(--bg); color: var(--text); }
+  [data-theme="dark"] .topbar, :root:not([data-theme="light"]) .topbar {
+    background: rgba(28, 28, 30, .78); border-color: rgba(255, 255, 255, .12); box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+  }
+  [data-theme="dark"] button, :root:not([data-theme="light"]) button { background: #2c2c2e; color: #f5f5f7; }
+  [data-theme="dark"] button:hover, :root:not([data-theme="light"]) button:hover { background: #3a3a3c; }
+  [data-theme="dark"] button.primary, :root:not([data-theme="light"]) button.primary { background: var(--accent); color: #fff; }
+  [data-theme="dark"] .overview, :root:not([data-theme="light"]) .overview { background: rgba(255, 255, 255, .04); }
+  [data-theme="dark"] .card, :root:not([data-theme="light"]) .card {
+    background: #1c1c1e; box-shadow: 0 2px 14px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .06);
+  }
+  [data-theme="dark"] .modal-panel, :root:not([data-theme="light"]) .modal-panel {
+    background: #1c1c1e; color: #f5f5f7; border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 20px 48px rgba(0, 0, 0, .6);
+  }
+  [data-theme="dark"] .modal-mask, :root:not([data-theme="light"]) .modal-mask { background: rgba(0, 0, 0, .72); }
+  [data-theme="dark"] input, [data-theme="dark"] select, :root:not([data-theme="light"]) input, :root:not([data-theme="light"]) select {
+    background: #2c2c2e; color: #f5f5f7; border-color: rgba(255, 255, 255, .15);
+  }
+  [data-theme="dark"] .sub-item, :root:not([data-theme="light"]) .sub-item {
+    background: #1c1c1e; box-shadow: 0 2px 12px rgba(0, 0, 0, .35);
+  }
+  [data-theme="dark"] .sub-item:hover, :root:not([data-theme="light"]) .sub-item:hover { background: #242426; }
+  [data-theme="dark"] .sub-item .ops button, :root:not([data-theme="light"]) .sub-item .ops button { background: transparent; color: var(--muted); }
+  [data-theme="dark"] .sub-item .ops button:hover, :root:not([data-theme="light"]) .sub-item .ops button:hover { background: rgba(255, 255, 255, .1); color: var(--text); }
+  [data-theme="dark"] .seg, :root:not([data-theme="light"]) .seg { background: rgba(255, 255, 255, .12); }
+  [data-theme="dark"] .seg button, :root:not([data-theme="light"]) .seg button { background: transparent; color: #98989d; }
+  [data-theme="dark"] .seg button.active, :root:not([data-theme="light"]) .seg button.active { background: #3a3a3c; color: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .4); }
+  [data-theme="dark"] .preset-chip, :root:not([data-theme="light"]) .preset-chip { background: #2c2c2e; border-color: rgba(255, 255, 255, .12); color: #f5f5f7; }
+  [data-theme="dark"] .preset-chip:hover, :root:not([data-theme="light"]) .preset-chip:hover { background: #3a3a3c; color: var(--accent); }
+  [data-theme="dark"] .payment-chips button, :root:not([data-theme="light"]) .payment-chips button { background: #2c2c2e; color: #f5f5f7; }
+  [data-theme="dark"] .payment-chips button:hover, :root:not([data-theme="light"]) .payment-chips button:hover { background: #3a3a3c; color: var(--accent); }
+  [data-theme="dark"] .cal-day, :root:not([data-theme="light"]) .cal-day { color: #f5f5f7; }
+  [data-theme="dark"] .cal-day:hover, :root:not([data-theme="light"]) .cal-day:hover { background: #2c2c2e; }
+  [data-theme="dark"] .cal-day.today, :root:not([data-theme="light"]) .cal-day.today { background: rgba(0, 122, 255, .25); color: #64b5f6; }
+  [data-theme="dark"] .cal-day.sel, :root:not([data-theme="light"]) .cal-day.sel { background: var(--accent); color: #fff; }
+  [data-theme="dark"] .cal-ev, :root:not([data-theme="light"]) .cal-ev { background: #2c2c2e; }
+  [data-theme="dark"] .up-item, :root:not([data-theme="light"]) .up-item { background: #1c1c1e; border-color: rgba(255, 255, 255, .08); }
+  [data-theme="dark"] .up-date, :root:not([data-theme="light"]) .up-date { background: #2c2c2e; color: #f5f5f7; }
+  [data-theme="dark"] .donut-wrap, :root:not([data-theme="light"]) .donut-wrap { background: #1c1c1e; box-shadow: 0 2px 14px rgba(0, 0, 0, .4); }
+  [data-theme="dark"] .donut-total, :root:not([data-theme="light"]) .donut-total { fill: #f5f5f7; }
+  [data-theme="dark"] .donut-label, :root:not([data-theme="light"]) .donut-label { fill: #8e8e93; }
+  [data-theme="dark"] .donut-svg circle:first-child, :root:not([data-theme="light"]) .donut-svg circle:first-child { stroke: #2c2c2e; }
+  [data-theme="dark"] .batch-toolbar, :root:not([data-theme="light"]) .batch-toolbar { background: rgba(28, 28, 30, .92); border-color: rgba(255, 255, 255, .15); color: #f5f5f7; }
+  [data-theme="dark"] .search-box, :root:not([data-theme="light"]) .search-box { background: #1c1c1e; color: #f5f5f7; border-color: rgba(255, 255, 255, .12); }
+  [data-theme="dark"] .live-preview, :root:not([data-theme="light"]) .live-preview { background: rgba(0, 122, 255, .15); color: #64b5f6; }
+  [data-theme="dark"] .sunk-card, :root:not([data-theme="light"]) .sunk-card { background: rgba(0, 122, 255, .15); border-color: rgba(0, 122, 255, .3); color: #64b5f6; }
+  [data-theme="dark"] .idle-banner, :root:not([data-theme="light"]) .idle-banner { background: rgba(255, 146, 43, .12); border-color: rgba(255, 146, 43, .3); color: #ffc078; }
+  [data-theme="dark"] .importance-seg button[data-val="essential"].active, :root:not([data-theme="light"]) .importance-seg button[data-val="essential"].active { color: #51cf66; background: rgba(43, 138, 62, .25); }
+  [data-theme="dark"] .importance-seg button[data-val="optional"].active, :root:not([data-theme="light"]) .importance-seg button[data-val="optional"].active { color: #fcc419; background: rgba(230, 119, 0, .25); }
+  [data-theme="dark"] .importance-seg button[data-val="idle"].active, :root:not([data-theme="light"]) .importance-seg button[data-val="idle"].active { color: #ff6b6b; background: rgba(201, 42, 42, .25); }
+  [data-theme="dark"] .badge-idle, :root:not([data-theme="light"]) .badge-idle { background: rgba(201, 42, 42, .25); color: #ff8787; }
+  [data-theme="dark"] .badge-optional, :root:not([data-theme="light"]) .badge-optional { background: rgba(230, 119, 0, .25); color: #ffd43b; }
+
   /* 分段控件（iOS segmented control） */
   .seg { display: flex; background: rgba(118, 118, 128, .12); border-radius: 10px; padding: 2px; }
   .seg button {
@@ -716,6 +844,7 @@
 <header class="topbar">
   <h1>朝 夕 <span class="en-sub">Dawn Ledger</span></h1>
   <div class="actions">
+    <button id="btnTheme" title="主题外观：跟随系统 / 深色 / 浅色" aria-label="主题外观"><svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
     <button id="btnMask" title="隐私隐匿模式：隐藏所有金额" aria-label="隐私隐匿模式"><svg id="maskIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
     <button id="btnCal" title="续费日历：查看订阅到期日"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="calDot" class="cal-dot" hidden></span></button>
     <button id="btnMore" title="更多：设置与导入导出"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg></button>
@@ -729,6 +858,14 @@
   <div class="menu-body modal-panel">
     <div class="menu-grabber"></div>
     <h3 class="menu-title">更多操作与设置</h3>
+    <div class="menu-theme-row">
+      <span>主题外观</span>
+      <div class="seg seg-sm" id="themeSeg">
+        <button type="button" data-theme-val="system" class="active">系统</button>
+        <button type="button" data-theme-val="light">浅色</button>
+        <button type="button" data-theme-val="dark">深色</button>
+      </div>
+    </div>
     <button type="button" data-menu="currency-settings"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="6" x2="12" y2="18"/></svg>基准币种与汇率设置</button>
     <button type="button" data-menu="import"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>导入备份</button>
     <button type="button" data-menu="export-json"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出 JSON 备份</button>
@@ -838,6 +975,15 @@
       <div class="hint">按年汇总</div>
     </div>
   </section>
+
+  <!-- 断舍离闲置止血预警 -->
+  <div id="idleBanner" class="idle-banner" hidden>
+    <div class="idle-left">
+      <span class="idle-emoji">✂️</span>
+      <span class="idle-msg" id="idleMsg">发现 <b>0</b> 项疑似闲置订阅，立即退订每年可省 <b>¥0.00</b></span>
+    </div>
+    <button type="button" id="btnFilterIdle" class="idle-btn">查看闲置</button>
+  </div>
 
   <!-- 类别占比环形图 -->
   <section class="donut-wrap" id="donutWrap" hidden>
@@ -953,6 +1099,7 @@
         <input id="fEnd" type="date">
       </div>
     </div>
+    <div class="sunk-card" id="sunkCard" hidden></div>
     <div class="live-preview" id="livePreview">≈ 每天 ¥0.00 · 每月 ¥0.00 · 每年 ¥0.00</div>
 
     <details class="more-settings" id="moreSettings">
@@ -970,6 +1117,15 @@
             <option value="其他"></option>
           </datalist>
           <div class="cat-chips" id="catChips"></div>
+        </div>
+        <div class="field">
+          <label>必要性评估（断舍离）</label>
+          <div class="seg importance-seg" id="importanceSeg">
+            <button type="button" class="active" data-val="essential">🟢 刚需日常</button>
+            <button type="button" data-val="optional">🟡 考虑降级</button>
+            <button type="button" data-val="idle">🔴 疑似闲置</button>
+          </div>
+          <input type="hidden" id="fImportance" value="essential">
         </div>
         <div class="row2">
           <div class="field">
@@ -1070,10 +1226,10 @@ let subs = [];
 
 // 首次使用时的示例数据（展示效果用，可随意删改）
 const DEFAULT_DATA = [
-  { id: 'demo-1', name: 'Netflix 视频', category: '视频', period: 'monthly', amount: 15, years: null, start: '', payment: '招商信用卡', note: '示例数据，可删除' },
-  { id: 'demo-2', name: 'iCloud+ 云空间', category: '工具', period: 'yearly', amount: 68, years: null, start: '', payment: 'Apple ID / Pay', note: '示例数据，可删除' },
-  { id: 'demo-3', name: '剪辑软件买断', category: '工具', period: 'one_time', amount: 698, years: 3, start: '', payment: '微信代扣', note: '示例数据，可删除' },
-  { id: 'demo-4', name: '半年会员卡', category: '其他', period: 'custom', amount: 30, years: null, start: '2026-03-01', end: '2026-08-31', payment: '支付宝免密', note: '示例数据，可删除' },
+  { id: 'demo-1', name: 'Netflix 视频', category: '视频', period: 'monthly', amount: 15, years: null, start: '2024-06-01', payment: '招商信用卡', importance: 'optional', note: '示例数据，可删除' },
+  { id: 'demo-2', name: 'iCloud+ 云空间', category: '工具', period: 'yearly', amount: 68, years: null, start: '2023-01-15', payment: 'Apple ID / Pay', importance: 'essential', note: '示例数据，可删除' },
+  { id: 'demo-3', name: '剪辑软件买断', category: '工具', period: 'one_time', amount: 698, years: 3, start: '2025-01-01', payment: '微信代扣', importance: 'essential', note: '示例数据，可删除' },
+  { id: 'demo-4', name: '半年会员卡', category: '其他', period: 'custom', amount: 30, years: null, start: '2026-03-01', end: '2026-08-31', payment: '支付宝免密', importance: 'idle', note: '示例数据，可删除' },
 ];
 
 // 常用服务快捷预设库（24 项主流中外订阅服务）
@@ -1239,6 +1395,7 @@ function normalizeSub(s, idx) {
     count: s && s.period === 'every_n' ? Math.max(1, Math.round(Number(s.count) || 1)) : null,
     trialEnd: s && typeof s.trialEnd === 'string' ? s.trialEnd.trim() : '',
     cancelAt: s && typeof s.cancelAt === 'string' ? s.cancelAt.trim() : '',
+    importance: s && ['essential', 'optional', 'idle'].includes(s.importance) ? s.importance : 'essential',
     active: !(s && s.active === false),
   };
 }
@@ -1296,6 +1453,93 @@ function calcCosts(sub) {
     yearly: yearly,
     monthly: yearly / MONTHS_PER_YEAR,
     daily: yearly / DAYS_PER_YEAR,
+  };
+}
+
+// 计算自订阅起始至今发生的累计实际支出（沉没成本）与在订时长
+function calcSunkCost(sub, now) {
+  if (!sub || !sub.start) return null;
+  const t = now ? new Date(now) : new Date();
+  const today = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  const s = new Date(sub.start + 'T00:00:00');
+  if (isNaN(s)) return null;
+
+  if (s > today) {
+    return {
+      days: 0,
+      textDuration: '尚未开始',
+      count: 0,
+      totalAmount: 0,
+    };
+  }
+
+  let end = today;
+  if (sub.cancelAt) {
+    const cEnd = new Date(sub.cancelAt + 'T00:00:00');
+    if (!isNaN(cEnd) && cEnd < today) {
+      end = cEnd;
+    }
+  }
+
+  const diffMs = end.getTime() - s.getTime();
+  const totalDays = Math.max(0, Math.round(diffMs / 86400000)) + 1;
+
+  let durText = '';
+  const years = Math.floor(totalDays / 365);
+  const remainingMonths = Math.floor((totalDays % 365) / 30);
+  if (years > 0) {
+    durText = years + ' 年' + (remainingMonths > 0 ? ' ' + remainingMonths + ' 个月' : '');
+  } else if (remainingMonths > 0) {
+    durText = remainingMonths + ' 个月';
+  } else {
+    durText = totalDays + ' 天';
+  }
+
+  const amt = Number(sub.amount) || 0;
+
+  if (sub.period === 'one_time' || sub.period === 'custom') {
+    return {
+      days: totalDays,
+      textDuration: durText,
+      count: 1,
+      totalAmount: amt,
+    };
+  }
+
+  const info = unitInfo(sub);
+  if (!info) return null;
+
+  const { unit, count } = info;
+  let kEst = 0;
+  if (unit === 'month') {
+    const mDiff = (end.getFullYear() - s.getFullYear()) * 12 + (end.getMonth() - s.getMonth());
+    kEst = Math.max(0, Math.floor(mDiff / count));
+  } else if (unit === 'year') {
+    const yDiff = end.getFullYear() - s.getFullYear();
+    kEst = Math.max(0, Math.floor(yDiff / count));
+  } else if (unit === 'week') {
+    const msW = 7 * count * 86400000;
+    kEst = Math.max(0, Math.floor(diffMs / msW));
+  } else if (unit === 'day') {
+    const msD = count * 86400000;
+    kEst = Math.max(0, Math.floor(diffMs / msD));
+  }
+
+  let k = Math.max(0, kEst - 2);
+  let validCount = 0;
+  let guard = 0;
+  while (guard++ < 2000) {
+    const d = kthRenewalDate(sub, k);
+    if (!d || d > end) break;
+    validCount = k + 1;
+    k++;
+  }
+
+  return {
+    days: totalDays,
+    textDuration: durText,
+    count: validCount,
+    totalAmount: validCount * amt,
   };
 }
 
@@ -1480,10 +1724,12 @@ function triggerDownload(blob, filename, okMsg) {
 // CSV 导出（Excel 可打开）
 function exportCSV() {
   const esc = (v) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const rows = [['名称', '类别', '周期', '金额', '币种', '扣款渠道', '使用年数', '开始', '结束', '备注', '每天成本', '每月成本', '每年成本']];
+  const rows = [['名称', '类别', '周期', '金额', '币种', '扣款渠道', '必要性', '使用年数', '开始', '结束', '备注', '每天成本', '每月成本', '每年成本']];
+  const impLabelMap = { essential: '刚需日常', optional: '考虑降级', idle: '疑似闲置' };
   for (const s of subs) {
     const c = calcCosts(s);
-    rows.push([s.name, s.category, s.period, s.amount, s.currency || 'CNY', s.payment || '', s.years || '', s.start || '', s.end || '', s.note || '',
+    const impText = impLabelMap[s.importance] || '刚需日常';
+    rows.push([s.name, s.category, s.period, s.amount, s.currency || 'CNY', s.payment || '', impText, s.years || '', s.start || '', s.end || '', s.note || '',
       c.daily.toFixed(3), c.monthly.toFixed(2), c.yearly.toFixed(2)]);
   }
   const blob = new Blob(['\ufeff' + rows.map((r) => r.map(esc).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
@@ -1530,13 +1776,25 @@ function exportICS() {
     count ? '已导出 ' + count + ' 个订阅的续费日历（含提前1天到期提醒闹钟），导入系统日历即可生效' : '');
 }
 
-// 弹窗内实时预览：边填边算
+// 弹窗内实时预览：边填边算 + 沉没成本推算
 function updateLivePreview() {
   const el = document.getElementById('livePreview');
   if (!el) return;
   const form = collectForm();
   const c = calcCosts(form);
   el.textContent = '≈ 每天 ' + fmtMoney(c.daily, form.currency) + ' · 每月 ' + fmtMoney(c.monthly, form.currency) + ' · 每年 ' + fmtMoney(c.yearly, form.currency);
+
+  const sunkEl = document.getElementById('sunkCard');
+  if (sunkEl) {
+    const sunk = calcSunkCost(form);
+    if (sunk && sunk.count > 0) {
+      sunkEl.hidden = false;
+      sunkEl.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>已在订 <b>' +
+        esc(sunk.textDuration) + '</b> · 累计已支出 <b>' + fmtMoney(sunk.totalAmount, form.currency) + '</b>（经历 ' + sunk.count + ' 次扣款）';
+    } else {
+      sunkEl.hidden = true;
+    }
+  }
 }
 
 // 「计入统计」开关：状态文字 + 后果提示 + 预览联动
@@ -1970,10 +2228,11 @@ function filterSubs(list, q) {
     (s.name || '').toLowerCase().includes(lq) || (s.category || '').toLowerCase().includes(lq));
 }
 
-// 批量模式状态
+// 批量模式状态与过滤
 let batchMode = false;
 let batchSel = new Set();
 let searchQuery = '';
+let filterIdleOnly = false;
 
 function renderBatchBar() {
   document.getElementById('batchBar').hidden = !batchMode;
@@ -2123,6 +2382,73 @@ function initPrivacyMode() {
   updateMaskIcon(isPrivate);
 }
 
+// OLED 暗黑模式管理
+const THEME_KEY = 'sub-cost-theme:v1';
+function getTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY) || 'system';
+  } catch (e) {
+    return 'system';
+  }
+}
+
+function updateThemeIcon(theme) {
+  const icon = document.getElementById('themeIcon');
+  const btn = document.getElementById('btnTheme');
+  if (!icon || !btn) return;
+  const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (isDark) {
+    btn.title = '当前：深色模式（点击切换浅色）';
+    // 太阳图标 (点击后切换到浅色)
+    icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  } else {
+    btn.title = '当前：浅色模式（点击切换深色）';
+    // 月亮图标 (点击后切换到深色)
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  }
+}
+
+function applyTheme(theme) {
+  if (typeof document !== 'undefined' && document.documentElement) {
+    if (theme === 'system') {
+      delete document.documentElement.dataset.theme;
+    } else {
+      document.documentElement.dataset.theme = theme;
+    }
+  }
+  updateThemeIcon(theme);
+  const themeSeg = document.getElementById('themeSeg');
+  if (themeSeg) {
+    themeSeg.querySelectorAll('button[data-theme-val]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.themeVal === theme);
+    });
+  }
+}
+
+function setTheme(theme) {
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch (e) {}
+  applyTheme(theme);
+}
+
+function toggleTheme() {
+  const current = getTheme();
+  const next = current === 'dark' ? 'light' : (current === 'light' ? 'system' : 'dark');
+  setTheme(next);
+  toast(next === 'dark' ? '已开启暗黑模式' : (next === 'light' ? '已开启浅色模式' : '已恢复跟随系统主题'));
+}
+
+function initTheme() {
+  const theme = getTheme();
+  applyTheme(theme);
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (getTheme() === 'system') updateThemeIcon('system');
+    });
+  }
+}
+
 // 每日成本的「体感」类比，让大数字可感知
 function dailyAnalogy(daily) {
   if (daily >= 20) return '≈ 一天一顿火锅';
@@ -2209,6 +2535,9 @@ function render() {
   const sortKey = document.querySelector('#sortSeg button.active').dataset.sort;
   let sorted = sortSubs(subs, sortKey);
   sorted = filterSubs(sorted, searchQuery);
+  if (filterIdleOnly) {
+    sorted = sorted.filter((s) => s.importance === 'idle');
+  }
   document.getElementById('subList').innerHTML = sorted.map((sub) => {
     const c = calcCosts(sub);
     const inactive = sub.active === false;
@@ -2221,7 +2550,10 @@ function render() {
     if (sub.trialEnd && new Date(sub.trialEnd + 'T00:00:00') >= _today) life.push('试用至 ' + sub.trialEnd);
     if (sub.cancelAt) life.push('服务至 ' + sub.cancelAt);
     const payBadge = sub.payment ? '💳 ' + sub.payment : '';
-    const meta = [inactive ? '已取消' : '', periodText(sub), renewalText(sub), payBadge].concat(life).concat([sub.note]).filter(Boolean).join(' · ');
+    const impBadge = sub.importance === 'idle'
+      ? '<span class="badge-importance badge-idle">🔴 疑似闲置</span>'
+      : (sub.importance === 'optional' ? '<span class="badge-importance badge-optional">🟡 考虑降级</span>' : '');
+    const meta = [inactive ? '已取消' : '', periodText(sub), renewalText(sub), payBadge, impBadge].concat(life).concat([sub.note]).filter(Boolean).join(' · ');
 
     return (
       '<li class="sub-item' + (inactive ? ' inactive' : '') + (batchMode && batchSel.has(sub.id) ? ' batch-selected' : '') + '" data-id="' + esc(sub.id) + '">' +
@@ -2268,7 +2600,21 @@ function render() {
   // ⑦ 未来扣款清单
   renderUpcoming();
 
-  // ⑧ App 壳本地通知调度（浏览器环境自动跳过）
+  // ⑧ 断舍离闲置止血预警
+  const idleSubs = subs.filter((s) => s.active !== false && s.importance === 'idle');
+  const idleBanner = document.getElementById('idleBanner');
+  if (idleBanner) {
+    if (idleSubs.length > 0) {
+      const idleYearly = idleSubs.reduce((sum, s) => sum + toBaseCurrency(calcCosts(s).yearly, s.currency, baseCur), 0);
+      document.getElementById('idleMsg').innerHTML =
+        '发现 <b>' + idleSubs.length + '</b> 项疑似闲置订阅，若果断退订每年可省 <b>' + fmtMoney(idleYearly, baseCur) + '</b>';
+      idleBanner.hidden = false;
+    } else {
+      idleBanner.hidden = true;
+    }
+  }
+
+  // ⑨ App 壳本地通知调度（浏览器环境自动跳过）
   syncNativeNotifications();
 }
 
@@ -2299,6 +2645,14 @@ function openDialog(sub) {
   f('countField').hidden = (sub ? sub.period : 'yearly') !== 'every_n';
   const presetSec = document.getElementById('presetSection');
   if (presetSec) presetSec.hidden = !!sub; // 编辑已有订阅时折叠预设，新增时展示
+  const imp = sub && sub.importance ? sub.importance : 'essential';
+  if (f('fImportance')) f('fImportance').value = imp;
+  const impSeg = document.getElementById('importanceSeg');
+  if (impSeg) {
+    impSeg.querySelectorAll('button[data-val]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.val === imp);
+    });
+  }
   openModal('subDialog');
   updateLivePreview();
   buildCatChips(); // 刷新类别快捷选择
@@ -2318,6 +2672,7 @@ function collectForm() {
     start: f('fStart').value,
     end: f('fEnd').value,
     payment: (f('fPayment') ? f('fPayment').value : '').trim(),
+    importance: (f('fImportance') ? f('fImportance').value : 'essential'),
     note: f('fNote').value.trim(),
     currency: CURRENCIES.includes(f('fCurrency').value) ? f('fCurrency').value : 'CNY',
     count: period === 'every_n' ? Math.max(1, Math.round(Number(f('fCount').value) || 1)) : null,
@@ -2395,6 +2750,7 @@ function init() {
   renderPresets();
   buildPaymentChips();
   initPrivacyMode();
+  initTheme();
 
   // 导出备份（JSON 信息包：版本 + 导出时间 + 订阅列表）—— 先确认防误触
   function doExportJSON() {
@@ -2575,7 +2931,7 @@ function init() {
   });
 
   // 弹窗内实时预览
-  ['fAmount', 'fPeriod', 'fYears', 'fStart', 'fEnd'].forEach((id) => {
+  ['fAmount', 'fPeriod', 'fYears', 'fStart', 'fEnd', 'fCancelAt'].forEach((id) => {
     document.getElementById(id).addEventListener('input', updateLivePreview);
     document.getElementById(id).addEventListener('change', updateLivePreview);
     document.getElementById(id).addEventListener('input', () => setFieldError(id, ''));
@@ -2765,6 +3121,45 @@ function init() {
   const btnMask = document.getElementById('btnMask');
   if (btnMask) {
     btnMask.addEventListener('click', togglePrivacyMode);
+  }
+
+  // 顶栏主题切换
+  const btnTheme = document.getElementById('btnTheme');
+  if (btnTheme) {
+    btnTheme.addEventListener('click', toggleTheme);
+  }
+
+  // 更多菜单主题选择
+  const themeSeg = document.getElementById('themeSeg');
+  if (themeSeg) {
+    themeSeg.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-theme-val]');
+      if (!btn) return;
+      setTheme(btn.dataset.themeVal);
+    });
+  }
+
+  // 断舍离闲置过滤按钮
+  const btnFilterIdle = document.getElementById('btnFilterIdle');
+  if (btnFilterIdle) {
+    btnFilterIdle.addEventListener('click', () => {
+      filterIdleOnly = !filterIdleOnly;
+      btnFilterIdle.classList.toggle('active', filterIdleOnly);
+      btnFilterIdle.textContent = filterIdleOnly ? '显示全部' : '查看闲置';
+      render();
+    });
+  }
+
+  // 表单必要性评级切换
+  const impSeg = document.getElementById('importanceSeg');
+  if (impSeg) {
+    impSeg.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-val]');
+      if (!btn) return;
+      impSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === btn));
+      const fImp = document.getElementById('fImportance');
+      if (fImp) fImp.value = btn.dataset.val;
+    });
   }
 
   // 表单类别 chips 点击 → 填入输入框

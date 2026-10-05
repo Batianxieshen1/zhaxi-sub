@@ -27,10 +27,10 @@ const ctx = {
 vm.createContext(ctx);
 // 追加一行导出：const 声明的词法绑定不会自动挂到 context 上，需在沙箱内显式导出
 vm.runInContext(
-  m[1] + '\n;globalThis.__exports = { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS };',
+  m[1] + '\n;globalThis.__exports = { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS };',
   ctx
 );
-const { calcCosts, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS } = ctx.__exports;
+const { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS } = ctx.__exports;
 
 function approx(actual, expected, eps = 1e-9) {
   assert.ok(Math.abs(actual - expected) < eps,
@@ -470,5 +470,78 @@ assert.match(html, /\.privacy-mode/, '包含隐私打码样式类');
 assert.match(html, /filter:\s*blur\(6px\)/, '隐私打码使用毛玻璃模糊');
 assert.match(m[1], /PRIVACY_KEY/, 'JS 包含隐私模式持久化键');
 assert.match(m[1], /togglePrivacyMode/, '包含隐私模式切换函数');
+
+console.log('▶ Phase 2: 累计沉没成本与在订时长透视（calcSunkCost）');
+// 1. 未来的订阅 -> 尚未开始，扣费次数为 0，金额为 0
+const sunkFuture = calcSunkCost({ period: 'monthly', amount: 15, start: '2099-01-01' }, '2026-10-01');
+assert.equal(sunkFuture.count, 0);
+assert.equal(sunkFuture.totalAmount, 0);
+assert.equal(sunkFuture.textDuration, '尚未开始');
+
+// 2. 过去 6 个月的月付订阅（2026-04-01 至 2026-10-01：04-01, 05-01, 06-01, 07-01, 08-01, 09-01, 10-01 共 7 次扣款）
+const sunkMonth = calcSunkCost({ period: 'monthly', amount: 15, start: '2026-04-01' }, '2026-10-01');
+assert.equal(sunkMonth.count, 7);
+assert.equal(sunkMonth.totalAmount, 105);
+assert.ok(sunkMonth.days >= 180);
+assert.match(sunkMonth.textDuration, /个月|天/);
+
+// 3. 过去 2 年的年付订阅（2024-05-15 至 2026-10-01：2024-05-15, 2025-05-15, 2026-05-15 共 3 次扣款）
+const sunkYear = calcSunkCost({ period: 'yearly', amount: 100, start: '2024-05-15' }, '2026-10-01');
+assert.equal(sunkYear.count, 3);
+assert.equal(sunkYear.totalAmount, 300);
+assert.match(sunkYear.textDuration, /2 年/);
+
+// 4. cancelAt 截断测试：提前取消的订阅，沉没成本停止在 cancelAt 前
+const sunkCancel = calcSunkCost({ period: 'monthly', amount: 20, start: '2026-01-01', cancelAt: '2026-04-15' }, '2026-10-01');
+assert.equal(sunkCancel.count, 4); // 01-01, 02-01, 03-01, 04-01 共 4 次
+assert.equal(sunkCancel.totalAmount, 80);
+
+// 5. 买断与自定义时间段
+const sunkBuyout = calcSunkCost({ period: 'one_time', amount: 698, start: '2025-01-01' }, '2026-10-01');
+assert.equal(sunkBuyout.count, 1);
+assert.equal(sunkBuyout.totalAmount, 698);
+
+// 6. 异常输入防御
+assert.equal(calcSunkCost(null), null);
+assert.equal(calcSunkCost({ start: '' }), null);
+assert.equal(calcSunkCost({ start: 'not-a-date' }), null);
+
+console.log('▶ Phase 2: 断舍离必要性评级（importance）');
+assert.equal(normalizeSub({ name: 'A', importance: 'idle' }).importance, 'idle');
+assert.equal(normalizeSub({ name: 'B', importance: 'optional' }).importance, 'optional');
+assert.equal(normalizeSub({ name: 'C', importance: 'essential' }).importance, 'essential');
+assert.equal(normalizeSub({ name: 'D' }).importance, 'essential', '默认评级为刚需日常 essential');
+assert.equal(normalizeSub({ name: 'E', importance: 'unknown' }).importance, 'essential', '非法值回退 essential');
+
+const impMerged = mergeSubs(
+  [{ id: 'imp-1', name: 'A', importance: 'idle' }],
+  [{ id: 'imp-2', name: 'B', importance: 'optional' }]
+);
+assert.equal(impMerged.list.find((s) => s.id === 'imp-1').importance, 'idle');
+assert.equal(impMerged.list.find((s) => s.id === 'imp-2').importance, 'optional');
+
+console.log('▶ Phase 2: CSV 导出包含必要性评估列');
+assert.match(m[1], /'必要性'/);
+assert.match(m[1], /impLabelMap/);
+assert.match(m[1], /刚需日常/);
+assert.match(m[1], /考虑降级/);
+assert.match(m[1], /疑似闲置/);
+
+console.log('▶ Phase 2: OLED 纯黑深色模式与主题持久化');
+assert.match(html, /id="btnTheme"/, '顶栏包含主题切换按钮');
+assert.match(html, /id="themeSeg"/, '设置抽屉包含主题分段切换器');
+assert.match(html, /\[data-theme="dark"\]/, '包含 data-theme="dark" 样式');
+assert.match(html, /--bg:\s*#000000;/, '暗黑模式背景为 OLED 极致纯黑');
+assert.match(m[1], /THEME_KEY/, 'JS 包含主题持久化键名');
+assert.match(m[1], /applyTheme/, 'JS 包含主题生效函数');
+assert.match(m[1], /toggleTheme/, 'JS 包含主题循环切换函数');
+
+console.log('▶ Phase 2: 断舍离闲置止血预警横幅与沉没成本 UI');
+assert.match(html, /id="idleBanner"/, 'DOM 包含闲置止血预警横幅');
+assert.match(html, /id="btnFilterIdle"/, 'DOM 包含查看闲置过滤按钮');
+assert.match(html, /id="sunkCard"/, 'DOM 包含累计沉没成本卡片');
+assert.match(html, /id="importanceSeg"/, 'DOM 包含必要性评级切换组件');
+assert.match(html, /\.badge-idle/, '包含闲置高亮徽章样式');
+assert.match(html, /\.idle-banner/, '包含预警横幅动画与布局样式');
 
 console.log('✅ 全部断言通过（' + DEFAULT_DATA.length + ' 条示例数据）');
