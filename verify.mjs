@@ -25,6 +25,8 @@ const ctx = {
   },
   TextEncoder: globalThis.TextEncoder,
   TextDecoder: globalThis.TextDecoder,
+  Uint8Array: globalThis.Uint8Array,
+  ArrayBuffer: globalThis.ArrayBuffer,
   btoa: globalThis.btoa,
   atob: globalThis.atob,
   fetch: globalThis.fetch,
@@ -36,10 +38,10 @@ const ctx = {
 vm.createContext(ctx);
 // 追加一行导出：const 声明的词法绑定不会自动挂到 context 上，需在沙箱内显式导出
 vm.runInContext(
-  m[1] + '\n;globalThis.__exports = { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS, loadSyncSettings, saveSyncSettings, encryptData, decryptData, arrayBufferToBase64, base64ToArrayBuffer, pushWebDAV, pullWebDAV, pushGist, pullGist, testSyncConnection, SYNC_SETTINGS_KEY, DEFAULT_SYNC_SETTINGS };',
+  m[1] + '\n;globalThis.__exports = { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs: (l) => { subs = l; }, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS, loadSyncSettings, saveSyncSettings, encryptData, decryptData, bytesToBase64, base64ToBytes, arrayBufferToBase64, base64ToArrayBuffer, pushWebDAV, pullWebDAV, pushGist, pullGist, testSyncConnection, SYNC_SETTINGS_KEY, DEFAULT_SYNC_SETTINGS };',
   ctx
 );
-const { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS, loadSyncSettings, saveSyncSettings, encryptData, decryptData, arrayBufferToBase64, base64ToArrayBuffer, pushWebDAV, pullWebDAV, pushGist, pullGist, testSyncConnection, SYNC_SETTINGS_KEY, DEFAULT_SYNC_SETTINGS } = ctx.__exports;
+const { calcCosts, calcSunkCost, summarize, fmtMoney, sortSubs, periodText, renewalText, dateDays, nextRenewalDate, kthRenewalDate, unitInfo, dailyAnalogy, normalizeSub, calEventsForMonth, calEndEventsForMonth, upcomingCharges, filterSubs, majorityCurrency, toBaseCurrency, getBaseCurrency, getRates, mergeSubs, hasForeignCurrencies, __setSubs, DEFAULT_DATA, PRESET_SUBS, COMMON_PAYMENTS, loadSyncSettings, saveSyncSettings, encryptData, decryptData, bytesToBase64, base64ToBytes, arrayBufferToBase64, base64ToArrayBuffer, pushWebDAV, pullWebDAV, pushGist, pullGist, testSyncConnection, SYNC_SETTINGS_KEY, DEFAULT_SYNC_SETTINGS } = ctx.__exports;
 
 function approx(actual, expected, eps = 1e-9) {
   assert.ok(Math.abs(actual - expected) < eps,
@@ -564,11 +566,14 @@ assert.equal(loadedSync.davUrl, 'https://dav.example.com/');
 assert.equal(loadedSync.davUser, 'user1');
 assert.equal(loadedSync.e2eeEnabled, true);
 
-console.log('▶ Phase 3: Base64 与 ArrayBuffer 互转无损性');
+console.log('▶ Phase 3: Base64 与 Uint8Array 互转无损性');
 const sampleBytes = new Uint8Array([0, 1, 255, 128, 64, 32, 16, 8, 4, 2, 1]);
-const b64 = arrayBufferToBase64(sampleBytes.buffer);
-const restoredBytes = new Uint8Array(base64ToArrayBuffer(b64));
+const b64 = bytesToBase64(sampleBytes);
+const restoredBytes = base64ToBytes(b64);
 assert.deepEqual(Array.from(sampleBytes), Array.from(restoredBytes));
+const b64Buf = arrayBufferToBase64(sampleBytes.buffer);
+const restoredBuf = new Uint8Array(base64ToArrayBuffer(b64Buf));
+assert.deepEqual(Array.from(sampleBytes), Array.from(restoredBuf));
 
 console.log('▶ Phase 3: 端对端 AES-256 加密与解密（E2EE 零知识保障）');
 const originalSecret = JSON.stringify({ note: '敏感财务数据', amount: 9999, currency: 'USD' });

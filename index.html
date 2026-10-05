@@ -1478,22 +1478,32 @@ function saveSyncSettings(s) {
   } catch (e) {}
 }
 
-function arrayBufferToBase64(buf) {
-  const bytes = new Uint8Array(buf);
+function bytesToBase64(bytes) {
+  const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
   let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  const len = u8.length;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(u8[i]);
   }
   return btoa(binary);
 }
 
-function base64ToArrayBuffer(base64) {
+function base64ToBytes(base64) {
   const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return bytes.buffer;
+  return bytes;
+}
+
+function arrayBufferToBase64(buf) {
+  return bytesToBase64(buf);
+}
+
+function base64ToArrayBuffer(base64) {
+  return base64ToBytes(base64).buffer;
 }
 
 function makeBasicAuthHeader(user, pass) {
@@ -1543,9 +1553,9 @@ async function encryptData(plainText, password) {
   return JSON.stringify({
     _e2ee: true,
     version: 1,
-    salt: arrayBufferToBase64(salt),
-    iv: arrayBufferToBase64(iv),
-    ciphertext: arrayBufferToBase64(cipherBuffer),
+    salt: bytesToBase64(salt),
+    iv: bytesToBase64(iv),
+    ciphertext: bytesToBase64(new Uint8Array(cipherBuffer)),
   });
 }
 
@@ -1558,9 +1568,9 @@ async function decryptData(cipherTextOrJson, password) {
     throw new Error('该备份已启用端对端加密，请输入主密码进行解密');
   }
   const cryptoObj = typeof window !== 'undefined' && window.crypto ? window.crypto : globalThis.crypto;
-  const salt = new Uint8Array(base64ToArrayBuffer(data.salt));
-  const iv = new Uint8Array(base64ToArrayBuffer(data.iv));
-  const cipherBytes = base64ToArrayBuffer(data.ciphertext);
+  const salt = base64ToBytes(data.salt);
+  const iv = base64ToBytes(data.iv);
+  const cipherBytes = base64ToBytes(data.ciphertext);
   const key = await deriveAesGcmKey(password, salt);
   try {
     const decryptedBuffer = await cryptoObj.subtle.decrypt(
