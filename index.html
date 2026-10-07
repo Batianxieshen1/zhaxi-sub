@@ -87,7 +87,7 @@
   .hero h2 { font-size: 40px; font-weight: 600; margin: 0 0 8px; display: flex; align-items: center; justify-content: center; gap: 14px; }
   /* 朝夕文字 logo：笔画创意 —— 字体保持黑色，图形元素叠在笔画上 */
   .logo-svg { width: min(270px, 82vw); height: auto; display: block; margin: 0 auto 10px; }
-  .logo-svg text { font-weight: 600; }
+  .logo-svg text { font-weight: 600; fill: #1d1d1f; }
   .hero p { font-size: 15px; color: var(--muted); margin: 0; }
   main { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
 
@@ -114,10 +114,9 @@
   }
   button.primary:hover .btn-icon { transform: translateX(1px) scale(1.08); }
 
-  /* 总览：主次布局 —— 手机 2 列：每天成本放大占整行，每月/每年并排；宽屏恢复 3 列。外层浅灰托盘（Double-Bezel） */
+  /* 总览：单英雄卡（苹果风格大数字收敛，每天摊销为主视觉，月/年为卡内次要数据） */
   .overview {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 22px;
-    background: rgba(30, 50, 90, .035); border-radius: 26px; padding: 6px;
+    margin-bottom: 22px;
   }
   .card {
     background: var(--card); border-radius: 20px;
@@ -127,26 +126,121 @@
     animation: appleIn .7s cubic-bezier(.2, .8, .2, 1) both;
     transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s cubic-bezier(.2, .8, .2, 1);
   }
-  .card:nth-child(2) { animation-delay: .08s; }
-  .card:nth-child(3) { animation-delay: .16s; }
   .card:hover { transform: translateY(-2px); box-shadow: 0 2px 6px rgba(0, 0, 0, .04), 0 14px 32px rgba(30, 60, 120, .10); }
   .card .label { font-size: 13px; color: var(--muted); }
-  /* 财报式数字：¥ 小字 + 数字大字（主卡更大，货币符号带律动弱化） */
   .card .value { display: flex; align-items: baseline; margin-top: 6px; }
   .card .cur { font-size: 14px; font-weight: 500; color: var(--muted); opacity: var(--cur-sym-opacity, 0.72); margin-right: 4px; }
   .card .num { font-size: 32px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .card.hl { grid-column: 1 / -1; }
-  .card.hl .cur, .card.hl .num { color: var(--accent); }
-  .card.hl .cur { font-size: 20px; opacity: var(--cur-sym-opacity, 0.72); margin-right: 4px; }
-  .card.hl .num { font-size: 52px; }
   .card .hint { font-size: 12px; color: var(--tertiary); margin-top: 4px; }
+
+  /* 英雄卡专属精致排版 */
+  .card.hero-card {
+    padding: 22px 24px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card .hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .hero-card .hero-top .label {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+  }
+  .hero-card .hero-value {
+    display: flex;
+    align-items: baseline;
+    margin-top: 8px;
+  }
+  .hero-card .hero-value .cur {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent);
+    opacity: var(--cur-sym-opacity, 0.72);
+    margin-right: 4px;
+  }
+  .hero-card .hero-value .num {
+    font-size: 52px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.05;
+  }
+  .hero-card .hero-hint {
+    font-size: 13px;
+    color: var(--tertiary);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .hero-sub-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 18px;
+    padding: 12px 18px;
+    background: rgba(30, 50, 90, .03);
+    border-radius: 14px;
+    border: 1px solid rgba(0, 0, 0, .03);
+  }
+  .hero-sub-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .hero-sub-item:last-child {
+    text-align: right;
+  }
+  .hero-sub-item .sub-label {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+  }
+  .hero-sub-item:last-child .sub-label {
+    justify-content: flex-end;
+  }
+  .hero-sub-item .sub-val {
+    display: flex;
+    align-items: baseline;
+    margin-top: 2px;
+  }
+  .hero-sub-item:last-child .sub-val {
+    justify-content: flex-end;
+  }
+  .hero-sub-item .sub-val .cur {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    opacity: var(--cur-sym-opacity, 0.72);
+    margin-right: 3px;
+  }
+  .hero-sub-item .sub-val .num {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-sub-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--hairline, rgba(0, 0, 0, .06));
+    margin: 0 16px;
+    flex-shrink: 0;
+  }
   @media (min-width: 700px) {
-    .overview { grid-template-columns: repeat(3, 1fr); }
-    .card.hl { grid-column: auto; }
-    .card .cur { font-size: 16px; }
-    .card .num { font-size: 40px; }
-    .card.hl .cur { font-size: 18px; }
-    .card.hl .num { font-size: 40px; }
+    .card.hero-card { padding: 26px 30px 22px; }
+    .hero-card .hero-value .num { font-size: 58px; }
+    .hero-sub-stats { padding: 14px 22px; }
+    .hero-sub-item .sub-val .num { font-size: 21px; }
   }
 
   /* 类别汇总 */
@@ -452,24 +546,50 @@
   .badge-idle { background: #fde8e8; color: #bd3131; }
   .badge-optional { background: #fcf7db; color: #cf5518; }
 
-  /* 断舍离止血预警横幅（降饱和 10%） */
+  /* 断舍离止血预警胶囊横幅（莫兰迪温和降饱和 10%） */
   .idle-banner {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    background: #fdf8f2; border: 1px solid #f7dac0; color: #9a5312;
-    border-radius: 16px; padding: 12px 18px; margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(230, 130, 40, .09);
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(217, 119, 6, .08);
+    border: 1px solid rgba(217, 119, 6, .22);
+    color: #92400e;
     animation: appleIn .4s ease;
   }
-  .idle-left { display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.4; }
-  .idle-emoji { font-size: 16px; }
-  .idle-btn {
-    border: none; background: #d95e1e; color: #fff; font-size: 12px; font-weight: 600;
-    padding: 6px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap;
-    transition: background .2s, transform .15s; flex-shrink: 0;
+  .idle-banner[hidden] { display: none; }
+  .idle-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
   }
-  .idle-btn:hover { background: #c55317; }
-  .idle-btn:active { transform: scale(.96); }
-  .idle-btn.active { background: #495057; }
+  .idle-emoji { font-size: 14px; flex-shrink: 0; }
+  .idle-msg {
+    flex: 1;
+    min-width: 0;
+    font-size: 12.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .idle-msg b { font-weight: 600; color: #78350f; }
+  .idle-btn {
+    border: none;
+    background: #d97706;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background .2s, transform .15s;
+    box-shadow: 0 1px 4px rgba(217, 119, 6, .25);
+  }
+  .idle-btn:hover { background: #b45309; }
+  .idle-btn:active { transform: scale(.95); }
+  .idle-btn.active { background: #475569; box-shadow: none; }
 
   /* 更多菜单中的主题切换行 */
   .menu-theme-row {
@@ -530,9 +650,21 @@
   [data-theme="dark"] button, :root:not([data-theme="light"]) button { background: #2c2c2e; color: #f5f5f7; }
   [data-theme="dark"] button:hover, :root:not([data-theme="light"]) button:hover { background: #3a3a3c; }
   [data-theme="dark"] button.primary, :root:not([data-theme="light"]) button.primary { background: var(--accent); color: #fff; }
-  [data-theme="dark"] .overview, :root:not([data-theme="light"]) .overview { background: rgba(255, 255, 255, .04); }
+  [data-theme="dark"] .overview, :root:not([data-theme="light"]) .overview { background: transparent; }
   [data-theme="dark"] .card, :root:not([data-theme="light"]) .card {
     background: #1c1c1e; border: 1px solid rgba(255, 255, 255, .08); box-shadow: 0 2px 14px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .06);
+  }
+  [data-theme="dark"] .hero-sub-stats, :root:not([data-theme="light"]) .hero-sub-stats {
+    background: rgba(255, 255, 255, .04); border-color: rgba(255, 255, 255, .08);
+  }
+  [data-theme="dark"] .hero-sub-divider, :root:not([data-theme="light"]) .hero-sub-divider {
+    background: rgba(255, 255, 255, .12);
+  }
+  [data-theme="dark"] .hero-sub-item .sub-val .num, :root:not([data-theme="light"]) .hero-sub-item .sub-val .num {
+    color: #f5f5f7;
+  }
+  [data-theme="dark"] .logo-svg text, :root:not([data-theme="light"]) .logo-svg text {
+    fill: #f5f5f7;
   }
   [data-theme="dark"] .modal-panel, :root:not([data-theme="light"]) .modal-panel {
     background: #1c1c1e; color: #f5f5f7; border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 20px 48px rgba(0, 0, 0, .6);
@@ -590,6 +722,9 @@
   [data-theme="dark"] .live-preview, :root:not([data-theme="light"]) .live-preview { background: rgba(0, 122, 255, .15); color: #64b5f6; }
   [data-theme="dark"] .sunk-card, :root:not([data-theme="light"]) .sunk-card { background: rgba(0, 122, 255, .15); border-color: rgba(0, 122, 255, .3); color: #64b5f6; }
   [data-theme="dark"] .idle-banner, :root:not([data-theme="light"]) .idle-banner { background: rgba(255, 146, 43, .12); border-color: rgba(255, 146, 43, .3); color: #ffc078; }
+  [data-theme="dark"] .due-banner, :root:not([data-theme="light"]) .due-banner { background: rgba(0, 122, 255, .15); border-color: rgba(0, 122, 255, .3); color: #64b5f6; }
+  [data-theme="dark"] .due-banner .due-icon, :root:not([data-theme="light"]) .due-icon { color: #64b5f6; }
+  [data-theme="dark"] .due-banner .due-arrow, :root:not([data-theme="light"]) .due-arrow { color: #64b5f6; }
   [data-theme="dark"] .importance-seg button[data-val="essential"].active, :root:not([data-theme="light"]) .importance-seg button[data-val="essential"].active { color: #51cf66; background: rgba(43, 138, 62, .25); }
   [data-theme="dark"] .importance-seg button[data-val="optional"].active, :root:not([data-theme="light"]) .importance-seg button[data-val="optional"].active { color: #fcc419; background: rgba(230, 119, 0, .25); }
   [data-theme="dark"] .importance-seg button[data-val="idle"].active, :root:not([data-theme="light"]) .importance-seg button[data-val="idle"].active { color: #ff6b6b; background: rgba(201, 42, 42, .25); }
@@ -888,18 +1023,66 @@
     font-variant-numeric: tabular-nums; letter-spacing: .02em;
   }
 
-  /* 今日到期横幅 */
-  .due-banner {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    background: linear-gradient(135deg, #eef6ff, #e8f0ff); color: var(--text);
-    border: 1px solid #cfe2ff; border-radius: 14px; padding: 12px 16px;
-    margin: -6px 0 20px; cursor: pointer; font-size: 14px; font-weight: 500;
-    animation: appleIn .5s cubic-bezier(.2, .8, .2, 1) both;
-    transition: transform .2s cubic-bezier(.2, .8, .2, 1);
+  /* 状态合流胶囊（今日到期 + 闲置止血；无异常时完全隐匿，有异常时平滑呼出） */
+  .status-capsule {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: -6px 0 18px;
+    animation: appleIn .4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
-  .due-banner:hover { transform: scale(1.01); }
-  .due-banner .due-arrow { color: var(--accent); font-size: 18px; }
-  .due-banner .due-icon { width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; color: var(--accent); }
+  .status-capsule[hidden] { display: none; }
+
+  .status-pill-item {
+    display: flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+    transition: transform .2s cubic-bezier(.2, .8, .2, 1), background .2s, box-shadow .2s;
+  }
+  .status-pill-item:active { transform: scale(.98); }
+  .status-pill-item[hidden] { display: none; }
+
+  /* 今日到期胶囊横幅 */
+  .due-banner {
+    justify-content: space-between;
+    gap: 10px;
+    background: rgba(0, 122, 255, .08);
+    border: 1px solid rgba(0, 122, 255, .18);
+    color: #0056b3;
+    cursor: pointer;
+  }
+  .due-banner:hover {
+    background: rgba(0, 122, 255, .12);
+    box-shadow: 0 2px 8px rgba(0, 122, 255, .12);
+  }
+  .due-banner .pill-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .due-banner .due-icon {
+    width: 14px;
+    height: 14px;
+    vertical-align: -2px;
+    margin-right: 5px;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .due-banner .due-arrow {
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 600;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
   .due-banner[hidden] { display: none; }
 
   /* iOS 开关（计入统计） */
@@ -1192,40 +1375,52 @@
     <div class="clock" id="clock"></div>
   </section>
 
-  <!-- 今日到期横幅 -->
-  <div id="dueBanner" class="due-banner" hidden>
-    <span id="dueText"></span>
-    <span class="due-arrow">›</span>
+  <!-- 状态合流胶囊（今日到期 + 闲置止血；无异常时完全隐匿） -->
+  <div id="statusCapsule" class="status-capsule" hidden>
+    <!-- 今日到期横幅胶囊 -->
+    <div id="dueBanner" class="due-banner status-pill-item" hidden>
+      <span id="dueText" class="pill-text"></span>
+      <span class="due-arrow">›</span>
+    </div>
+
+    <!-- 断舍离闲置止血预警胶囊 -->
+    <div id="idleBanner" class="idle-banner status-pill-item" hidden>
+      <div class="idle-left">
+        <span class="idle-emoji">✂️</span>
+        <span class="idle-msg pill-text" id="idleMsg">发现 <b>0</b> 项疑似闲置订阅，立即退订每年可省 <b>¥0.00</b></span>
+      </div>
+      <button type="button" id="btnFilterIdle" class="idle-btn">查看闲置</button>
+    </div>
   </div>
 
-  <!-- 总览：双成本视角的核心 -->
+  <!-- 总览：单英雄卡（以每天摊销为灵魂核心，月度与年度为副数据基底） -->
   <section class="overview">
-    <div class="card hl">
-      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>每天摊销</div>
-      <div class="value" id="totalDaily"><span class="cur">¥</span><span class="num">0.00</span></div>
-      <div class="hint" id="dailyHint">所有订阅平摊到每天</div>
-      <div style="margin-top:2px;"><span id="curBadge" class="cur-badge" hidden title="含有外币订阅，已按汇率统一折算">含外币折算 ⚙️</span></div>
-    </div>
-    <div class="card">
-      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每月摊销</div>
-      <div class="value" id="totalMonthly"><span class="cur">¥</span><span class="num">0.00</span></div>
-      <div class="hint">所有订阅平摊到每月</div>
-    </div>
-    <div class="card">
-      <div class="label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/></svg>每年摊销</div>
-      <div class="value" id="totalYearly"><span class="cur">¥</span><span class="num">0.00</span></div>
-      <div class="hint">按年汇总</div>
+    <div class="card hero-card hl">
+      <div class="hero-top">
+        <div class="label">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px;opacity:.85"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>每天摊销支出
+        </div>
+        <span id="curBadge" class="cur-badge" hidden title="含有外币订阅，已按汇率统一折算">含外币折算 ⚙️</span>
+      </div>
+      <div class="value hero-value" id="totalDaily"><span class="cur">¥</span><span class="num">0.00</span></div>
+      <div class="hint hero-hint" id="dailyHint">所有订阅平摊到每天</div>
+      <div class="hero-sub-stats">
+        <div class="hero-sub-item">
+          <div class="sub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;opacity:.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每月折算
+          </div>
+          <div class="value sub-val" id="totalMonthly"><span class="cur">¥</span><span class="num">0.00</span></div>
+        </div>
+        <div class="hero-sub-divider"></div>
+        <div class="hero-sub-item">
+          <div class="sub-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;opacity:.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/></svg>每年累计
+          </div>
+          <div class="value sub-val" id="totalYearly"><span class="cur">¥</span><span class="num">0.00</span></div>
+        </div>
+      </div>
     </div>
   </section>
-
-  <!-- 断舍离闲置止血预警 -->
-  <div id="idleBanner" class="idle-banner" hidden>
-    <div class="idle-left">
-      <span class="idle-emoji">✂️</span>
-      <span class="idle-msg" id="idleMsg">发现 <b>0</b> 项疑似闲置订阅，立即退订每年可省 <b>¥0.00</b></span>
-    </div>
-    <button type="button" id="btnFilterIdle" class="idle-btn">查看闲置</button>
-  </div>
 
   <!-- 类别占比环形图 -->
   <section class="donut-wrap" id="donutWrap" hidden>
@@ -3455,6 +3650,12 @@ function render() {
     }
   }
 
+  // 状态合流胶囊可见性统筹（无任何异常时完全隐匿，零占位）
+  const statusCapsule = document.getElementById('statusCapsule');
+  if (statusCapsule) {
+    statusCapsule.hidden = (banner ? banner.hidden : true) && (idleBanner ? idleBanner.hidden : true);
+  }
+
   // ⑨ App 壳本地通知调度（浏览器环境自动跳过）
   syncNativeNotifications();
 }
@@ -3739,7 +3940,9 @@ function init() {
     render();
   });
   document.getElementById('batchAll').addEventListener('click', () => {
-    const visible = filterSubs(subs, searchQuery).map((s) => s.id);
+    let visibleSubs = filterSubs(subs, searchQuery);
+    if (filterIdleOnly) visibleSubs = visibleSubs.filter((s) => s.importance === 'idle');
+    const visible = visibleSubs.map((s) => s.id);
     if (batchSel.size === visible.length && visible.length > 0) {
       batchSel.clear();
     } else {

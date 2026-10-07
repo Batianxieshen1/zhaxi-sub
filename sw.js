@@ -1,5 +1,5 @@
 // 朝夕 Service Worker：离线可用 + 在线时永远最新版
-const CACHE = 'zhaxi-v10';
+const CACHE = 'zhaxi-v11';
 const ASSETS = [
   './',
   './index.html',
