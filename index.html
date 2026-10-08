@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="deploy-ver" content="6">
+<meta name="deploy-ver" content="12">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dawn Ledger · 朝夕订阅成本</title>
 <meta name="description" content="朝夕 · 把年费细算到每一天，提醒每个订阅的到期日">
@@ -517,7 +517,7 @@
   }
   #btnMask.active { color: var(--accent); background: #e3edff; }
 
-  /* 沉没成本透视卡片 */
+  /* 沉没成本透视卡片（带 [hidden] 防溢出守卫） */
   .sunk-card {
     background: #eef6ff;
     border: 1px solid rgba(0, 122, 255, .18);
@@ -530,6 +530,107 @@
     align-items: center;
     gap: 8px;
   }
+  .sunk-card[hidden] {
+    display: none !important;
+  }
+
+  /* 表单按需渐进披露药丸栏 */
+  .form-pills-bar {
+    margin: 12px 0 6px;
+    padding: 0;
+  }
+  .pills-bar-title {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 6px;
+    letter-spacing: .2px;
+  }
+  .pills-bar-scroll {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .field-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 11px;
+    font-size: 12px;
+    line-height: 1.2;
+    border-radius: 980px;
+    background: #f2f2f7;
+    color: #3a3a3c;
+    border: 1px solid rgba(0, 0, 0, .06);
+    cursor: pointer;
+    user-select: none;
+    transition: background .2s cubic-bezier(.2, .8, .2, 1), color .2s, border-color .2s, transform .12s;
+  }
+  .field-pill:hover {
+    background: #e5e5ea;
+    color: #1d1d1f;
+  }
+  .field-pill:active {
+    transform: scale(.96);
+  }
+  .field-pill .pill-icon {
+    font-weight: 600;
+    font-size: 11px;
+    opacity: .7;
+  }
+  .field-pill.active {
+    background: rgba(0, 122, 255, .12);
+    color: var(--accent);
+    border-color: rgba(0, 122, 255, .28);
+    font-weight: 500;
+  }
+  .field-pill.active .pill-icon {
+    opacity: 1;
+  }
+
+  /* 可选字段容器动画与收起按钮 */
+  .form-opt-field {
+    animation: fieldReveal .24s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .form-opt-field[hidden] {
+    display: none !important;
+  }
+  @keyframes fieldReveal {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .form-opt-field { animation: none !important; }
+  }
+
+  .field-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .field-label-row label {
+    margin-bottom: 0;
+  }
+  .field-dismiss-btn {
+    font-size: 11px;
+    color: var(--muted);
+    background: transparent;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    opacity: .8;
+    transition: opacity .15s, color .15s;
+  }
+  .field-dismiss-btn:hover {
+    opacity: 1;
+    color: var(--danger);
+    background: transparent;
+  }
+
 
   /* 必要性断舍离评估单选控件（温和降饱和 10%，兼顾高级感与预警语义） */
   .importance-seg { margin-top: 6px; }
@@ -732,6 +833,10 @@
   [data-theme="dark"] .badge-optional, :root:not([data-theme="light"]) .badge-optional { background: rgba(230, 119, 0, .25); color: #ffd43b; }
   [data-theme="dark"] .sync-status-card, :root:not([data-theme="light"]) .sync-status-card { background: rgba(255, 255, 255, .06); }
   [data-theme="dark"] .sync-e2ee-box, :root:not([data-theme="light"]) .sync-e2ee-box { background: rgba(0, 122, 255, .1); border-color: rgba(0, 122, 255, .25); }
+  [data-theme="dark"] .field-pill, :root:not([data-theme="light"]) .field-pill { background: #2c2c2e; color: #d1d1d6; border-color: rgba(255, 255, 255, .08); }
+  [data-theme="dark"] .field-pill:hover, :root:not([data-theme="light"]) .field-pill:hover { background: #3a3a3c; color: #f5f5f7; }
+  [data-theme="dark"] .field-pill.active, :root:not([data-theme="light"]) .field-pill.active { background: rgba(0, 122, 255, .22); color: #64b5f6; border-color: rgba(0, 122, 255, .35); }
+
 
   /* 分段控件（iOS segmented control + 丝滑滑块） */
   .seg {
@@ -1387,7 +1492,7 @@
     <div id="idleBanner" class="idle-banner status-pill-item" hidden>
       <div class="idle-left">
         <span class="idle-emoji">✂️</span>
-        <span class="idle-msg pill-text" id="idleMsg">发现 <b>0</b> 项疑似闲置订阅，立即退订每年可省 <b>¥0.00</b></span>
+        <span class="idle-msg pill-text" id="idleMsg">闲置 <b>0</b> 项 · 每年可省 <b>¥0.00</b></span>
       </div>
       <button type="button" id="btnFilterIdle" class="idle-btn">查看闲置</button>
     </div>
@@ -1539,11 +1644,27 @@
     <div class="sunk-card" id="sunkCard" hidden></div>
     <div class="live-preview" id="livePreview">≈ 每天 ¥0.00 · 每月 ¥0.00 · 每年 ¥0.00</div>
 
+    <!-- 渐进披露药丸栏 -->
+    <div class="form-pills-bar" id="fieldPillsBar">
+      <div class="pills-bar-title">按需补充详细信息</div>
+      <div class="pills-bar-scroll">
+        <button type="button" class="field-pill" data-field="category"><span class="pill-icon">+</span> 🏷️ 类别</button>
+        <button type="button" class="field-pill" data-field="payment"><span class="pill-icon">+</span> 💳 渠道</button>
+        <button type="button" class="field-pill" data-field="importance"><span class="pill-icon">+</span> 🎯 必要性</button>
+        <button type="button" class="field-pill" data-field="lifecycle"><span class="pill-icon">+</span> ⏱️ 试用/取消</button>
+        <button type="button" class="field-pill" data-field="note"><span class="pill-icon">+</span> 📝 备注</button>
+        <button type="button" class="field-pill" data-field="active"><span class="pill-icon">+</span> ⚙️ 计入统计</button>
+      </div>
+    </div>
+
     <details class="more-settings" id="moreSettings">
-      <summary><span>更多设置</span><span class="more-hint">类别、试用、备注等</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="more-chev"><polyline points="6 9 12 15 18 9"/></svg></summary>
+      <summary><span>全部可选设置</span><span class="more-hint">类别、渠道、必要性等</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="more-chev"><polyline points="6 9 12 15 18 9"/></svg></summary>
       <div class="more-body">
-        <div class="field">
-          <label for="fCategory">类别</label>
+        <div class="field form-opt-field" id="opt_category" data-opt-field="category" hidden>
+          <div class="field-label-row">
+            <label for="fCategory">类别</label>
+            <button type="button" class="field-dismiss-btn" data-dismiss="category" title="收起类别">收起</button>
+          </div>
           <input id="fCategory" list="catList" placeholder="如：视频 / 工具 / 学习">
           <datalist id="catList">
             <option value="视频"></option>
@@ -1555,27 +1676,12 @@
           </datalist>
           <div class="cat-chips" id="catChips"></div>
         </div>
-        <div class="field">
-          <label>必要性评估（断舍离）</label>
-          <div class="seg importance-seg" id="importanceSeg">
-            <button type="button" class="active" data-val="essential">🟢 刚需日常</button>
-            <button type="button" data-val="optional">🟡 考虑降级</button>
-            <button type="button" data-val="idle">🔴 疑似闲置</button>
+
+        <div class="field form-opt-field" id="opt_payment" data-opt-field="payment" hidden>
+          <div class="field-label-row">
+            <label for="fPayment">支付渠道 / 扣款账户（可选）</label>
+            <button type="button" class="field-dismiss-btn" data-dismiss="payment" title="收起渠道">收起</button>
           </div>
-          <input type="hidden" id="fImportance" value="essential">
-        </div>
-        <div class="row2">
-          <div class="field">
-            <label for="fTrialEnd">试用结束日（可选）</label>
-            <input id="fTrialEnd" type="date">
-          </div>
-          <div class="field">
-            <label for="fCancelAt">取消生效日（可选）</label>
-            <input id="fCancelAt" type="date">
-          </div>
-        </div>
-        <div class="field">
-          <label for="fPayment">支付渠道 / 扣款账户（可选）</label>
           <input id="fPayment" list="paymentList" placeholder="如：微信免密 / 支付宝 / 招行信用卡 / Apple ID">
           <datalist id="paymentList">
             <option value="微信代扣"></option>
@@ -1587,16 +1693,54 @@
           </datalist>
           <div class="payment-chips" id="paymentChips"></div>
         </div>
-        <div class="field">
-          <label for="fNote">备注</label>
-          <input id="fNote" placeholder="可选">
+
+        <div class="field form-opt-field" id="opt_importance" data-opt-field="importance" hidden>
+          <div class="field-label-row">
+            <label>必要性评估（断舍离）</label>
+            <button type="button" class="field-dismiss-btn" data-dismiss="importance" title="收起必要性">收起</button>
+          </div>
+          <div class="seg importance-seg" id="importanceSeg">
+            <button type="button" class="active" data-val="essential">🟢 刚需日常</button>
+            <button type="button" data-val="optional">🟡 考虑降级</button>
+            <button type="button" data-val="idle">🔴 疑似闲置</button>
+          </div>
+          <input type="hidden" id="fImportance" value="essential">
         </div>
-        <div class="field">
-          <label class="switch-row">
-            <span id="activeLabel">计入统计</span>
-            <input type="checkbox" id="fActive" class="switch">
-            <span class="track"></span>
-          </label>
+
+        <div class="field form-opt-field" id="opt_lifecycle" data-opt-field="lifecycle" hidden>
+          <div class="field-label-row">
+            <label>生命周期节点（可选）</label>
+            <button type="button" class="field-dismiss-btn" data-dismiss="lifecycle" title="收起生命周期">收起</button>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label for="fTrialEnd">试用结束日（可选）</label>
+              <input id="fTrialEnd" type="date">
+            </div>
+            <div class="field">
+              <label for="fCancelAt">取消生效日（可选）</label>
+              <input id="fCancelAt" type="date">
+            </div>
+          </div>
+        </div>
+
+        <div class="field form-opt-field" id="opt_note" data-opt-field="note" hidden>
+          <div class="field-label-row">
+            <label for="fNote">备注</label>
+            <button type="button" class="field-dismiss-btn" data-dismiss="note" title="收起备注">收起</button>
+          </div>
+          <input id="fNote" placeholder="可选备注信息">
+        </div>
+
+        <div class="field form-opt-field" id="opt_active" data-opt-field="active" hidden>
+          <div class="field-label-row">
+            <label class="switch-row">
+              <span id="activeLabel">计入统计</span>
+              <input type="checkbox" id="fActive" class="switch">
+              <span class="track"></span>
+            </label>
+            <button type="button" class="field-dismiss-btn" data-dismiss="active" title="收起开关">收起</button>
+          </div>
           <div class="switch-hint" id="activeHint">开关打开：正常计入总览、日历与应用内到期提示</div>
         </div>
       </div>
@@ -3643,7 +3787,7 @@ function render() {
     if (idleSubs.length > 0) {
       const idleYearly = idleSubs.reduce((sum, s) => sum + toBaseCurrency(calcCosts(s).yearly, s.currency, baseCur), 0);
       document.getElementById('idleMsg').innerHTML =
-        '发现 <b>' + idleSubs.length + '</b> 项疑似闲置订阅，若果断退订每年可省 <b>' + fmtMoneyHTML(idleYearly, baseCur) + '</b>';
+        '闲置 <b>' + idleSubs.length + '</b> 项 · 每年可省 <b>' + fmtMoneyHTML(idleYearly, baseCur) + '</b>';
       idleBanner.hidden = false;
     } else {
       idleBanner.hidden = true;
@@ -3660,7 +3804,42 @@ function render() {
   syncNativeNotifications();
 }
 
-// ---- 增删改表单 ----
+// ---- 增删改表单（渐进披露管理） ----
+const OPT_FIELDS = ['category', 'payment', 'importance', 'lifecycle', 'note', 'active'];
+
+function setOptFieldVisible(key, visible, shouldFocus = false) {
+  const group = document.getElementById('opt_' + key);
+  const pill = document.querySelector('.field-pill[data-field="' + key + '"]');
+  const details = document.getElementById('moreSettings');
+  if (!group) return;
+
+  group.hidden = !visible;
+  if (pill) {
+    pill.classList.toggle('active', visible);
+    const icon = pill.querySelector('.pill-icon');
+    if (icon) icon.textContent = visible ? '✓' : '+';
+  }
+
+  if (visible) {
+    if (details && !details.open) details.open = true;
+    if (key === 'importance') {
+      const impSeg = document.getElementById('importanceSeg');
+      if (impSeg) requestAnimationFrame(() => updateSegPill(impSeg, true));
+    }
+    if (shouldFocus) {
+      const input = group.querySelector('input:not([type="hidden"]), select, button');
+      if (input) setTimeout(() => input.focus(), 60);
+    }
+  } else {
+    const anyVisible = OPT_FIELDS.some((k) => {
+      const el = document.getElementById('opt_' + k);
+      return el && !el.hidden;
+    });
+    if (!anyVisible && details && details.open) {
+      details.open = false;
+    }
+  }
+}
 
 // 打开弹窗：sub 为空 → 新增模式；否则 → 编辑模式
 function openDialog(sub) {
@@ -3695,6 +3874,21 @@ function openDialog(sub) {
       b.classList.toggle('active', b.dataset.val === imp);
     });
   }
+
+  // 渐进披露控制：编辑模式自动展开有值字段，新增模式默认折叠保持极简
+  if (sub) {
+    setOptFieldVisible('category', !!sub.category);
+    setOptFieldVisible('payment', !!sub.payment);
+    setOptFieldVisible('importance', !!(sub.importance && sub.importance !== 'essential'));
+    setOptFieldVisible('lifecycle', !!(sub.trialEnd || sub.cancelAt));
+    setOptFieldVisible('note', !!sub.note);
+    setOptFieldVisible('active', sub.active === false);
+  } else {
+    OPT_FIELDS.forEach((k) => setOptFieldVisible(k, false));
+    const details = document.getElementById('moreSettings');
+    if (details) details.open = false;
+  }
+
   openModal('subDialog');
   updateLivePreview();
   buildCatChips(); // 刷新类别快捷选择
@@ -3738,6 +3932,16 @@ function setFieldError(id, msg) {
     }
     err.textContent = msg;
     el.classList.add('invalid');
+
+    // 规则 2：校验自动召回 —— 若字段在折叠的可选区域中，自动展开药丸并滚动聚焦
+    const optParent = el.closest('.form-opt-field');
+    if (optParent && optParent.dataset.optField) {
+      setOptFieldVisible(optParent.dataset.optField, true);
+    }
+    const details = el.closest('details');
+    if (details && !details.open) {
+      details.open = true;
+    }
   } else {
     if (err) err.remove();
     el.classList.remove('invalid');
@@ -4221,7 +4425,7 @@ function init() {
     closeModal('subDialog');
   });
 
-  // 表单常用服务快捷预设：点击一键填入
+  // 表单常用服务快捷预设：点击一键填入（规则 3：联动自动展开对应药丸，绝不填入隐藏字段）
   const presetBox = document.getElementById('presetScroller');
   if (presetBox) {
     presetBox.addEventListener('click', (e) => {
@@ -4232,7 +4436,7 @@ function init() {
       if (!p) return;
       const f = (id) => document.getElementById(id);
       f('fName').value = p.name;
-      f('fCategory').value = p.category;
+      f('fCategory').value = p.category || '';
       f('fPeriod').value = p.period;
       f('fAmount').value = p.amount;
       f('fCurrency').value = p.currency || 'CNY';
@@ -4240,11 +4444,61 @@ function init() {
       f('yearsField').hidden = p.period !== 'one_time';
       f('endField').hidden = p.period !== 'custom';
       f('countField').hidden = p.period !== 'every_n';
+
+      // 规则 3：预设联动自动展开
+      if (p.category) setOptFieldVisible('category', true);
+      if (p.payment) setOptFieldVisible('payment', true);
+      if (p.note) setOptFieldVisible('note', true);
+      if (p.importance && p.importance !== 'essential') setOptFieldVisible('importance', true);
+
       updateLivePreview();
       setFieldError('fName', '');
       setFieldError('fAmount', '');
       btn.style.transform = 'scale(0.95)';
       setTimeout(() => { btn.style.transform = ''; }, 120);
+    });
+  }
+
+  // 表单按需渐进披露药丸交互
+  const pillsBar = document.getElementById('fieldPillsBar');
+  if (pillsBar) {
+    pillsBar.addEventListener('click', (e) => {
+      const pill = e.target.closest('.field-pill');
+      if (!pill) return;
+      const key = pill.dataset.field;
+      if (!key) return;
+      const group = document.getElementById('opt_' + key);
+      const isVisible = group && !group.hidden;
+      setOptFieldVisible(key, !isVisible, !isVisible);
+    });
+  }
+
+  // 可选字段单项收起按钮交互
+  document.querySelectorAll('.field-dismiss-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const key = btn.dataset.dismiss;
+      if (key) setOptFieldVisible(key, false);
+    });
+  });
+
+  // 全部可选设置折叠面板与药丸双向联动
+  const moreSettings = document.getElementById('moreSettings');
+  if (moreSettings) {
+    moreSettings.addEventListener('toggle', () => {
+      if (moreSettings.open) {
+        const anyVisible = OPT_FIELDS.some((k) => {
+          const el = document.getElementById('opt_' + k);
+          return el && !el.hidden;
+        });
+        if (!anyVisible) {
+          OPT_FIELDS.forEach((k) => setOptFieldVisible(k, true));
+        }
+        const impSeg = document.getElementById('importanceSeg');
+        if (impSeg) requestAnimationFrame(() => updateSegPill(impSeg, true));
+      } else {
+        OPT_FIELDS.forEach((k) => setOptFieldVisible(k, false));
+      }
     });
   }
 
